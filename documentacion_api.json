@@ -1,0 +1,187 @@
+{
+  "titulo": "API Red Social - Documentación",
+  "descripcion": "API RESTful para gestión de usuarios, autenticación, publicaciones y relaciones de seguimiento en una red social.",
+  "endpoints": [
+    {
+      "grupo": "Autenticación",
+      "endpoints": [
+        {
+          "metodo": "POST",
+          "ruta": "/api/auth/signup",
+          "descripcion": "Registrar un nuevo usuario.",
+          "body": {
+            "username": "string",
+            "email": "string",
+            "password": "string",
+            "bio": "string (opcional)",
+            "profile_pic_url": "string (opcional)",
+            "is_private": "boolean (opcional)"
+          },
+          "respuesta_201": {
+            "message": "User registered successfully",
+            "token": "string",
+            "user_id": "string"
+          },
+          "errores": [
+            {"codigo": 400, "mensaje": "Datos inválidos o faltantes"},
+            {"codigo": 500, "mensaje": "Error interno al registrar usuario"}
+          ]
+        },
+        {
+          "metodo": "POST",
+          "ruta": "/api/auth/login",
+          "descripcion": "Iniciar sesión de usuario.",
+          "body": {
+            "username_or_email": "string",
+            "password": "string"
+          },
+          "respuesta_200": {
+            "message": "Login successful",
+            "token": "string",
+            "user": {
+              "id": "string",
+              "username": "string",
+              "email": "string"
+            }
+          },
+          "errores": [
+            {"codigo": 400, "mensaje": "Faltan credenciales"},
+            {"codigo": 401, "mensaje": "Credenciales inválidas"},
+            {"codigo": 500, "mensaje": "Error interno al iniciar sesión"}
+          ]
+        }
+      ]
+    },
+    {
+      "grupo": "Usuarios",
+      "endpoints": [
+        {
+          "metodo": "GET",
+          "ruta": "/api/users/profile",
+          "descripcion": "Obtener perfil propio (requiere JWT)."
+        },
+        {
+          "metodo": "PUT",
+          "ruta": "/api/users/profile",
+          "descripcion": "Actualizar perfil propio (requiere JWT).",
+          "body": {
+            "username": "string (opcional)",
+            "email": "string (opcional)",
+            "bio": "string (opcional)",
+            "profile_pic_url": "string (opcional)"
+          }
+        },
+        {
+          "metodo": "PUT",
+          "ruta": "/api/users/privacy",
+          "descripcion": "Actualizar privacidad (requiere JWT).",
+          "body": {
+            "is_private": "boolean (opcional)",
+            "show_email": "boolean (opcional)",
+            "allow_mentions": "boolean (opcional)"
+          }
+        },
+        {
+          "metodo": "PUT",
+          "ruta": "/api/users/notifications",
+          "descripcion": "Actualizar notificaciones (requiere JWT).",
+          "body": {
+            "new_follower": "boolean (opcional)",
+            "likes": "boolean (opcional)",
+            "mentions": "boolean (opcional)",
+            "direct_messages": "boolean (opcional)"
+          }
+        },
+        {
+          "metodo": "PUT",
+          "ruta": "/api/users/password",
+          "descripcion": "Cambiar contraseña (requiere JWT).",
+          "body": {
+            "current_password": "string",
+            "new_password": "string"
+          }
+        },
+        {
+          "metodo": "GET",
+          "ruta": "/api/users/{username}",
+          "descripcion": "Obtener perfil público por username."
+        },
+        {
+          "metodo": "POST",
+          "ruta": "/api/users/{username}/follow",
+          "descripcion": "Seguir a un usuario (requiere JWT)."
+        },
+        {
+          "metodo": "POST",
+          "ruta": "/api/users/{username}/unfollow",
+          "descripcion": "Dejar de seguir a un usuario (requiere JWT)."
+        }
+      ]
+    },
+    {
+      "grupo": "Publicaciones",
+      "endpoints": [
+        {
+          "metodo": "POST",
+          "ruta": "/api/post/posts",
+          "descripcion": "Crear publicación (requiere JWT).",
+          "body": {
+            "content": "string",
+            "media_urls": ["string", "..."]
+          }
+        },
+        {
+          "metodo": "GET",
+          "ruta": "/api/post/posts",
+          "descripcion": "Obtener publicaciones (feed o por usuario).",
+          "query_params": ["page", "limit", "username (opcional)"]
+        },
+        {
+          "metodo": "GET",
+          "ruta": "/api/post/posts/{post_id}",
+          "descripcion": "Obtener publicación por ID."
+        },
+        {
+          "metodo": "PUT",
+          "ruta": "/api/post/posts/{post_id}",
+          "descripcion": "Editar publicación (requiere JWT).",
+          "body": {
+            "content": "string",
+            "media_urls": ["string", "..."]
+          }
+        },
+        {
+          "metodo": "DELETE",
+          "ruta": "/api/post/posts/{post_id}",
+          "descripcion": "Eliminar publicación (requiere JWT)."
+        },
+        {
+          "metodo": "GET",
+          "ruta": "/api/post/feed",
+          "descripcion": "Obtener feed personalizado (requiere JWT).",
+          "query_params": ["page", "limit"]
+        },
+        {
+          "metodo": "POST",
+          "ruta": "/api/post/posts/{post_id}/like",
+          "descripcion": "Dar like a una publicación (requiere JWT)."
+        }
+      ]
+    }
+  ],
+  "seguridad": {
+    "jwt": "El token JWT se obtiene al iniciar sesión o registrarse y debe enviarse en el header Authorization: Bearer <token> para las rutas protegidas."
+  },
+  "errores_comunes": [
+    {"codigo": 400, "descripcion": "Datos inválidos o faltantes."},
+    {"codigo": 401, "descripcion": "No autorizado o token inválido."},
+    {"codigo": 404, "descripcion": "Recurso no encontrado."},
+    {"codigo": 500, "descripcion": "Error interno del servidor."}
+  ],
+  "notas": [
+    "Todos los cuerpos de las solicitudes deben estar en formato JSON.",
+    "Reemplaza {username} y {post_id} por los valores reales.",
+    "Las contraseñas nunca se retornan en las respuestas.",
+    "El sistema utiliza MongoDB y JWT para autenticación y almacenamiento."
+  ]
+}

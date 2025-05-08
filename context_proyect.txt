@@ -1,0 +1,148 @@
+# Resumen del Proyecto - Red Social (Frontend)
+
+## Rutas del Proyecto:
+- src/
+  - components/
+    - feed/
+      - feed-content.tsx
+    - profile/
+      - profile-edit.tsx
+    - ui/
+      - input.tsx
+      - label.tsx
+      - tooltip.tsx
+      - separator.tsx
+      - button.tsx
+      - textarea.tsx
+      - dialog.tsx
+      - card.tsx
+      - avatar.tsx
+      - sheet.tsx
+      - alert.tsx
+    - BlipList.tsx
+    - theme-provider.tsx
+    - mode-toggle.tsx
+  - hooks/
+    - useApi.ts
+  - api/
+    - apiClient.ts
+    - endpoints.ts
+    - services/
+      - authService.ts
+      - userService.ts
+      - postService.ts
+  - utils/
+    - tokenStorage.ts
+  - pages/
+    - feed/
+      - index.tsx
+      - components/
+        - Sidebar.tsx
+        - MobileSidebar.tsx
+        - FeedHeader.tsx
+        - RightPanel.tsx
+        - NavItem.tsx
+        - TrendingTopic.tsx
+        - MobilePostButton.tsx
+    - register/
+      - index.tsx
+    - login/
+      - index.tsx
+    - profile/
+      - index.tsx
+    - test/
+      - api-test.tsx
+  - App.tsx
+  - context/
+    - AuthContext.tsx
+  - types/
+    - api.ts
+    - models.ts
+
+## Componentes Principales:
+- FeedContent (muestra publicaciones y permite crear nuevas)
+- ProfileEdit (edición de perfil de usuario autenticado, usando datos del contexto de autenticación)
+- BlipList (lista de "blips" o publicaciones cortas)
+- UI Components: Button, Input, Label, Tooltip, Separator, Textarea, Dialog, Card, Avatar, Sheet, Form, Alert, etc.
+- ThemeProvider (gestión de tema claro/oscuro)
+- Formularios con validación usando react-hook-form y zod
+- Sidebar y MobileSidebar (barra de navegación lateral, muestra información del usuario logeado)
+- FeedHeader, RightPanel, NavItem, TrendingTopic, MobilePostButton (componentes auxiliares para la página de feed)
+- ApiTestPage (página para probar la conexión con la API de posts)
+
+## Tecnologías Utilizadas:
+- React (v19)
+- Vite (configuración en vite.config.ts)
+- TailwindCSS (v4, integración con @tailwindcss/vite y tailwindcss-animate)
+- TypeScript
+- shadcn/ui (colección de componentes UI basada en Radix UI)
+- Radix UI (varios componentes: dialog, tooltip, avatar, etc.)
+- React Router DOM (v7)
+- Axios (peticiones HTTP)
+- react-hook-form y zod (gestión y validación de formularios)
+- lucide-react (iconos SVG)
+- Otros: class-variance-authority, clsx, date-fns
+
+## Gestión de Autenticación:
+- Almacenamiento de token JWT en cookies para persistencia de sesión.
+- Contexto de autenticación (AuthContext) para compartir el estado del usuario en toda la aplicación.
+- Funciones para iniciar sesión, cerrar sesión y actualizar datos del usuario.
+- Verificación automática de sesión al cargar la aplicación.
+- Interceptores para incluir el token en las peticiones HTTP.
+- Manejo de errores de autenticación (token expirado, inválido, etc.).
+- Redirección a login cuando se intenta acceder a rutas protegidas sin autenticación.
+
+### Implementación de Cookies:
+- Se utiliza el objeto `document.cookie` para almacenar el token JWT.
+- El token se guarda con atributos de seguridad (secure, samesite=strict).
+- Se establece una fecha de expiración para la cookie (por defecto 7 días).
+- Funciones implementadas en `tokenStorage.ts`:
+  - `saveToken`: Guarda el token en una cookie
+  - `getToken`: Obtiene el token desde la cookie
+  - `removeToken`: Elimina la cookie (logout)
+  - `hasToken`: Verifica si existe un token válido
+
+### Flujo de Autenticación:
+1. El usuario inicia sesión con username/email y contraseña
+2. El backend valida las credenciales y devuelve un token JWT
+3. El frontend guarda el token en una cookie
+4. El token se envía automáticamente en cada petición HTTP
+5. Si el token es inválido o expira, se redirige al usuario al login
+
+## Consumo de API:
+- Se utiliza Axios para realizar peticiones HTTP.
+- Estructura de servicios separados por funcionalidad:
+  - `authService`: Registro, login
+  - `userService`: Operaciones con usuarios (perfil, seguir/dejar de seguir)
+  - `postService`: Operaciones con publicaciones (crear, listar, actualizar, eliminar)
+- Interceptores para añadir automáticamente el token de autenticación a las peticiones.
+- Manejo centralizado de errores y respuestas.
+- Tipado fuerte con TypeScript para las respuestas de la API.
+
+### Endpoints Principales:
+- Autenticación: `/api/auth/signup`, `/api/auth/login`
+- Usuarios: `/api/users/profile`, `/api/users/{username}`, `/api/users/{username}/follow`
+- Publicaciones: `/api/post/posts`, `/api/post/feed`, `/api/post/posts/{postId}`
+
+## Páginas Implementadas:
+- Login: Formulario de inicio de sesión con validación y alerta de éxito
+- Register: Formulario de registro con validación de campos
+- Feed: Página principal con listado de publicaciones
+- Profile: Página de perfil con edición de datos del usuario
+
+## Componentes de UI Personalizados:
+- Alertas para mostrar mensajes de éxito y error
+- Avatar con fallback para cuando no hay imagen de perfil
+- Botones con variantes (primary, ghost, outline)
+- Cards para contenedores de información
+- Inputs y formularios con validación
+- Sidebar responsive para navegación
+
+## Mejoras Implementadas:
+- Protección de rutas para usuarios no autenticados
+- Manejo de estados de carga para mejorar UX
+- Validación de formularios con feedback inmediato
+- Persistencia de sesión entre recargas de página
+- Navegación programática después de acciones (login, logout)
+- Manejo de errores con mensajes descriptivos
+- Componentes reutilizables para mantener consistencia visual
