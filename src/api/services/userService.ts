@@ -1,136 +1,106 @@
 import apiClient from '../apiClient';
-import endpoints from '../endpoints';
-import { ApiResponse, User } from '@/types/api';
-
-interface UpdateProfileData {
-  username?: string;
-  email?: string;
-  bio?: string;
-  profile_pic_url?: string;
-}
-
-interface UpdatePrivacyData {
-  is_private?: boolean;
-  show_email?: boolean;
-  allow_mentions?: boolean;
-}
-
-interface UpdatePasswordData {
-  current_password: string;
-  new_password: string;
-}
+import { ApiResponse } from '@/types/api';
+import { User } from '@/types/models';
 
 const userService = {
-  // Obtener perfil del usuario autenticado
   getCurrentUser: async (): Promise<ApiResponse<User>> => {
     try {
-      const response = await apiClient.get(endpoints.users.profile);
+      const response = await apiClient.get('/api/users/profile');
       return {
         success: true,
-        data: response.data
+        data: {
+          _id: response.data.id,
+          username: response.data.username,
+          email: response.data.email,
+          bio: response.data.bio || '',
+          profile_pic_url: response.data.profile_pic_url || '',
+          is_private: response.data.is_private || false,
+          followers_count: response.data.followers_count || 0,
+          following_count: response.data.following_count || 0,
+        },
+        message: 'Perfil obtenido correctamente'
       };
     } catch (error: any) {
       return {
         success: false,
-        error: error.response?.data?.message || 'Error al obtener perfil'
+        message: error.response?.data?.message || 'Error al obtener perfil',
+        error: error.message
       };
     }
   },
 
-  // Actualizar perfil
-  updateProfile: async (data: UpdateProfileData): Promise<ApiResponse<User>> => {
+  getUserById: async (userId: string): Promise<ApiResponse<User>> => {
     try {
-      const response = await apiClient.put(endpoints.users.updateProfile, data);
+      const response = await apiClient.get(`/api/users/${userId}`);
+      return {
+        success: true,
+        data: {
+          _id: response.data.id,
+          username: response.data.username,
+          bio: response.data.bio || '',
+          profile_pic_url: response.data.profile_pic_url || '',
+          is_private: response.data.is_private || false,
+          followers_count: response.data.followers_count || 0,
+          following_count: response.data.following_count || 0,
+        },
+        message: 'Usuario obtenido correctamente'
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Error al obtener usuario',
+        error: error.message
+      };
+    }
+  },
+
+  updateUser: async (userId: string, userData: Partial<User>): Promise<ApiResponse<User>> => {
+    try {
+      const response = await apiClient.put('/api/users/profile', userData);
+      return {
+        success: true,
+        data: response.data.user,
+        message: response.data.message || 'Perfil actualizado correctamente'
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Error al actualizar perfil',
+        error: error.message
+      };
+    }
+  },
+
+  getAllUsers: async (): Promise<ApiResponse<User[]>> => {
+    try {
+      const response = await apiClient.get('/api/users');
+      return {
+        success: true,
+        data: Array.isArray(response.data) ? response.data : response.data.users || [],
+        message: 'Usuarios obtenidos correctamente'
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Error al obtener usuarios',
+        error: error.message
+      };
+    }
+  },
+
+  searchUsers: async (query: string): Promise<ApiResponse<User[]>> => {
+    try {
+      const response = await apiClient.get(`/api/users/search?q=${query}`);
       return {
         success: true,
         data: response.data,
-        message: 'Perfil actualizado correctamente'
+        message: 'Búsqueda completada'
       };
     } catch (error: any) {
       return {
         success: false,
-        error: error.response?.data?.message || 'Error al actualizar perfil'
-      };
-    }
-  },
-
-  // Actualizar configuración de privacidad
-  updatePrivacy: async (data: UpdatePrivacyData): Promise<ApiResponse<any>> => {
-    try {
-      const response = await apiClient.put(endpoints.users.updatePrivacy, data);
-      return {
-        success: true,
-        data: response.data,
-        message: 'Configuración de privacidad actualizada'
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.response?.data?.message || 'Error al actualizar privacidad'
-      };
-    }
-  },
-
-  // Cambiar contraseña
-  updatePassword: async (data: UpdatePasswordData): Promise<ApiResponse<any>> => {
-    try {
-      const response = await apiClient.put(endpoints.users.updatePassword, data);
-      return {
-        success: true,
-        message: 'Contraseña actualizada correctamente'
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.response?.data?.message || 'Error al cambiar contraseña'
-      };
-    }
-  },
-
-  // Obtener perfil de usuario por nombre de usuario
-  getUserByUsername: async (username: string): Promise<ApiResponse<User>> => {
-    try {
-      const response = await apiClient.get(endpoints.users.getByUsername(username));
-      return {
-        success: true,
-        data: response.data
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.response?.data?.message || 'Usuario no encontrado'
-      };
-    }
-  },
-
-  // Seguir a un usuario
-  followUser: async (username: string): Promise<ApiResponse<any>> => {
-    try {
-      const response = await apiClient.post(endpoints.users.follow(username));
-      return {
-        success: true,
-        message: 'Ahora sigues a este usuario'
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.response?.data?.message || 'Error al seguir usuario'
-      };
-    }
-  },
-
-  // Dejar de seguir a un usuario
-  unfollowUser: async (username: string): Promise<ApiResponse<any>> => {
-    try {
-      const response = await apiClient.post(endpoints.users.unfollow(username));
-      return {
-        success: true,
-        message: 'Has dejado de seguir a este usuario'
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: error.response?.data?.message || 'Error al dejar de seguir usuario'
+        message: error.response?.data?.message || 'Error en la búsqueda',
+        error: error.message
       };
     }
   }

@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   HomeIcon, 
   UserIcon, 
@@ -6,15 +7,30 @@ import {
   MessageSquareIcon, 
   SearchIcon, 
   SettingsIcon,
-  XIcon
+  XIcon,
+  LogOutIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/context/AuthContext";
 import { NavItem } from "./NavItem";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function MobileSidebar() {
-  const { user } = useAuth();
+  const { user, logout, isAuthenticated, loading } = useAuth();
+  const navigate = useNavigate();
+
+  // Manejar cierre de sesión
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
+  // Obtener iniciales del usuario para el avatar fallback
+  const getUserInitials = () => {
+    if (!user || !user.username) return "U";
+    return user.username.substring(0, 2).toUpperCase();
+  };
 
   return (
     <Sheet>
@@ -48,27 +64,71 @@ export function MobileSidebar() {
             <NavItem icon={<SettingsIcon className="mr-4 h-5 w-5" />} label="Configuración" to="/settings" />
           </nav>
           
-          <Button className="w-full mt-4">Postear</Button>
+          <Button 
+            className="w-full mt-4"
+            onClick={() => {
+              if (isAuthenticated) {
+                navigate('/feed');
+              } else {
+                navigate('/login');
+              }
+            }}
+          >
+            Postear
+          </Button>
           
           {/* Perfil de usuario en la parte inferior del sidebar móvil */}
           <div className="mt-auto border-t pt-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <img 
-                    src={user?.avatar || "https://i.pravatar.cc/150?img=3"} 
-                    alt="Avatar" 
-                    className="h-10 w-10 rounded-md object-cover"
-                  />
+                  {loading ? (
+                    <div className="h-10 w-10 rounded-md bg-gray-200 animate-pulse"></div>
+                  ) : (
+                    <Avatar>
+                      <AvatarImage 
+                        src={user?.profile_pic_url || user?.avatar || "https://i.pravatar.cc/150?img=3"} 
+                        alt="Avatar" 
+                      />
+                      <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                    </Avatar>
+                  )}
                 </div>
                 <div>
-                  <p className="font-medium text-sm">{user?.username || "Usuario"}</p>
-                  <p className="text-xs text-muted-foreground">{user?.email || "usuario@ejemplo.com"}</p>
+                  {loading ? (
+                    <div className="space-y-2">
+                      <div className="h-3 w-20 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-2 w-24 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="font-medium text-sm">{user?.username || "Usuario"}</p>
+                      <p className="text-xs text-muted-foreground">{user?.email || "usuario@ejemplo.com"}</p>
+                    </>
+                  )}
                 </div>
               </div>
-              <Button variant="ghost" size="icon">
-                <SettingsIcon className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-1">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => {
+                    if (isAuthenticated) {
+                      navigate('/profile');
+                    } else {
+                      navigate('/login');
+                    }
+                  }}
+                  title="Ver y editar perfil"
+                >
+                  <UserIcon className="h-4 w-4" />
+                </Button>
+                {isAuthenticated && (
+                  <Button variant="ghost" size="icon" onClick={handleLogout} title="Cerrar sesión">
+                    <LogOutIcon className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>

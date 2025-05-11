@@ -63,7 +63,7 @@ export interface AuthResponse {
   user: User;
 }
 
-export interface ApiResponse<T> {
+export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   message?: string;

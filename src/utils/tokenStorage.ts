@@ -1,32 +1,39 @@
-// Funciones para gestionar el token JWT en cookies
+// Funciones para manejar el token JWT en localStorage para mayor persistencia
 
-// Guardar token en cookie
-export const saveToken = (token: string, expirationDays = 7) => {
-  const expirationDate = new Date();
-  expirationDate.setDate(expirationDate.getDate() + expirationDays);
+export const saveToken = (token: string, expiresInDays = 1): void => {
+  // Guardar en localStorage para persistencia entre recargas
+  localStorage.setItem('auth_token', token);
   
-  // Formato: "token=valor; expires=fecha; path=/; secure; samesite=strict"
-  document.cookie = `auth_token=${token}; expires=${expirationDate.toUTCString()}; path=/; secure; samesite=strict`;
+  // También establecer una fecha de expiración
+  const expirationDate = new Date();
+  expirationDate.setDate(expirationDate.getDate() + expiresInDays);
+  localStorage.setItem('token_expiry', expirationDate.toISOString());
 };
 
-// Obtener token desde cookie
 export const getToken = (): string | null => {
-  const cookies = document.cookie.split(';');
-  const tokenCookie = cookies.find(cookie => cookie.trim().startsWith('auth_token='));
+  const token = localStorage.getItem('auth_token');
+  const expiry = localStorage.getItem('token_expiry');
   
-  if (tokenCookie) {
-    return tokenCookie.trim().substring('auth_token='.length);
+  // Verificar si el token ha expirado
+  if (token && expiry) {
+    const expiryDate = new Date(expiry);
+    if (expiryDate > new Date()) {
+      return token;
+    } else {
+      // Si el token ha expirado, eliminarlo
+      removeToken();
+      return null;
+    }
   }
   
-  return null;
+  return token;
 };
 
-// Eliminar token (logout)
-export const removeToken = () => {
-  document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+export const removeToken = (): void => {
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('token_expiry');
 };
 
-// Verificar si hay un token (sesión activa)
 export const hasToken = (): boolean => {
   return getToken() !== null;
 };

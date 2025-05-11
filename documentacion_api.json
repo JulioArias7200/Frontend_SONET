@@ -1,6 +1,14 @@
 {
   "titulo": "API Red Social - Documentación",
-  "descripcion": "API RESTful para gestión de usuarios, autenticación, publicaciones y relaciones de seguimiento en una red social.",
+  "descripcion": "API RESTful para gestión de usuarios, autenticación, publicaciones, comentarios, notificaciones y relaciones de seguimiento en una red social similar a Twitter. Utiliza MongoDB como base de datos y JWT para autenticación.",
+  "tecnologias": [
+    "Python 3.13",
+    "Flask",
+    "PyMongo",
+    "Flask-JWT-Extended",
+    "Flask-SocketIO",
+    "MongoDB"
+  ],
   "endpoints": [
     {
       "grupo": "Autenticación",
@@ -10,17 +18,25 @@
           "ruta": "/api/auth/signup",
           "descripcion": "Registrar un nuevo usuario.",
           "body": {
-            "username": "string",
-            "email": "string",
-            "password": "string",
+            "username": "string (requerido)",
+            "email": "string (requerido)",
+            "password": "string (requerido)",
             "bio": "string (opcional)",
             "profile_pic_url": "string (opcional)",
-            "is_private": "boolean (opcional)"
+            "is_private": "boolean (opcional, default: false)"
+          },
+          "ejemplo_solicitud": {
+            "username": "usuario_ejemplo",
+            "email": "usuario@ejemplo.com",
+            "password": "contraseña123",
+            "bio": "Mi biografía",
+            "profile_pic_url": "https://ejemplo.com/imagen.jpg",
+            "is_private": false
           },
           "respuesta_201": {
             "message": "User registered successfully",
-            "token": "string",
-            "user_id": "string"
+            "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "user_id": "65f8a7b2c3d4e5f6a7b8c9d0"
           },
           "errores": [
             {"codigo": 400, "mensaje": "Datos inválidos o faltantes"},
@@ -32,16 +48,20 @@
           "ruta": "/api/auth/login",
           "descripcion": "Iniciar sesión de usuario.",
           "body": {
-            "username_or_email": "string",
-            "password": "string"
+            "username_or_email": "string (requerido)",
+            "password": "string (requerido)"
+          },
+          "ejemplo_solicitud": {
+            "username_or_email": "usuario_ejemplo",
+            "password": "contraseña123"
           },
           "respuesta_200": {
             "message": "Login successful",
-            "token": "string",
+            "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
             "user": {
-              "id": "string",
-              "username": "string",
-              "email": "string"
+              "id": "65f8a7b2c3d4e5f6a7b8c9d0",
+              "username": "usuario_ejemplo",
+              "email": "usuario@ejemplo.com"
             }
           },
           "errores": [
@@ -58,7 +78,23 @@
         {
           "metodo": "GET",
           "ruta": "/api/users/profile",
-          "descripcion": "Obtener perfil propio (requiere JWT)."
+          "descripcion": "Obtener perfil propio (requiere JWT).",
+          "respuesta_200": {
+            "id": "65f8a7b2c3d4e5f6a7b8c9d0",
+            "username": "usuario_ejemplo",
+            "email": "usuario@ejemplo.com",
+            "bio": "Mi biografía",
+            "profile_pic_url": "https://ejemplo.com/imagen.jpg",
+            "is_private": false,
+            "followers_count": 10,
+            "following_count": 20,
+            "created_at": "2025-04-26T10:00:00Z"
+          },
+          "errores": [
+            {"codigo": 401, "mensaje": "No autorizado o token inválido"},
+            {"codigo": 404, "mensaje": "Usuario no encontrado"},
+            {"codigo": 500, "mensaje": "Error interno del servidor"}
+          ]
         },
         {
           "metodo": "PUT",
@@ -69,7 +105,26 @@
             "email": "string (opcional)",
             "bio": "string (opcional)",
             "profile_pic_url": "string (opcional)"
-          }
+          },
+          "ejemplo_solicitud": {
+            "bio": "Mi nueva biografía",
+            "profile_pic_url": "https://ejemplo.com/nueva_imagen.jpg"
+          },
+          "respuesta_200": {
+            "message": "Profile updated successfully",
+            "user": {
+              "id": "65f8a7b2c3d4e5f6a7b8c9d0",
+              "username": "usuario_ejemplo",
+              "email": "usuario@ejemplo.com",
+              "bio": "Mi nueva biografía",
+              "profile_pic_url": "https://ejemplo.com/nueva_imagen.jpg"
+            }
+          },
+          "errores": [
+            {"codigo": 400, "mensaje": "Datos inválidos"},
+            {"codigo": 401, "mensaje": "No autorizado o token inválido"},
+            {"codigo": 500, "mensaje": "Error interno al actualizar perfil"}
+          ]
         },
         {
           "metodo": "PUT",
@@ -79,42 +134,87 @@
             "is_private": "boolean (opcional)",
             "show_email": "boolean (opcional)",
             "allow_mentions": "boolean (opcional)"
-          }
-        },
-        {
-          "metodo": "PUT",
-          "ruta": "/api/users/notifications",
-          "descripcion": "Actualizar notificaciones (requiere JWT).",
-          "body": {
-            "new_follower": "boolean (opcional)",
-            "likes": "boolean (opcional)",
-            "mentions": "boolean (opcional)",
-            "direct_messages": "boolean (opcional)"
-          }
+          },
+          "ejemplo_solicitud": {
+            "is_private": true,
+            "show_email": false
+          },
+          "respuesta_200": {
+            "message": "Privacy settings updated successfully"
+          },
+          "errores": [
+            {"codigo": 400, "mensaje": "Datos inválidos"},
+            {"codigo": 401, "mensaje": "No autorizado o token inválido"},
+            {"codigo": 500, "mensaje": "Error interno al actualizar privacidad"}
+          ]
         },
         {
           "metodo": "PUT",
           "ruta": "/api/users/password",
           "descripcion": "Cambiar contraseña (requiere JWT).",
           "body": {
-            "current_password": "string",
-            "new_password": "string"
-          }
+            "current_password": "string (requerido)",
+            "new_password": "string (requerido)"
+          },
+          "ejemplo_solicitud": {
+            "current_password": "contraseña_actual",
+            "new_password": "nueva_contraseña"
+          },
+          "respuesta_200": {
+            "message": "Password updated successfully"
+          },
+          "errores": [
+            {"codigo": 400, "mensaje": "Contraseña actual incorrecta o nueva contraseña inválida"},
+            {"codigo": 401, "mensaje": "No autorizado o token inválido"},
+            {"codigo": 500, "mensaje": "Error interno al cambiar contraseña"}
+          ]
         },
         {
           "metodo": "GET",
           "ruta": "/api/users/{username}",
-          "descripcion": "Obtener perfil público por username."
+          "descripcion": "Obtener perfil público por username.",
+          "respuesta_200": {
+            "id": "65f8a7b2c3d4e5f6a7b8c9d0",
+            "username": "usuario_ejemplo",
+            "bio": "Mi biografía",
+            "profile_pic_url": "https://ejemplo.com/imagen.jpg",
+            "is_private": false,
+            "followers_count": 10,
+            "following_count": 20,
+            "created_at": "2025-04-26T10:00:00Z"
+          },
+          "errores": [
+            {"codigo": 404, "mensaje": "Usuario no encontrado"},
+            {"codigo": 500, "mensaje": "Error interno del servidor"}
+          ]
         },
         {
           "metodo": "POST",
           "ruta": "/api/users/{username}/follow",
-          "descripcion": "Seguir a un usuario (requiere JWT)."
+          "descripcion": "Seguir a un usuario (requiere JWT).",
+          "respuesta_200": {
+            "message": "Now following usuario_ejemplo"
+          },
+          "errores": [
+            {"codigo": 400, "mensaje": "Ya sigues a este usuario"},
+            {"codigo": 401, "mensaje": "No autorizado o token inválido"},
+            {"codigo": 404, "mensaje": "Usuario no encontrado"},
+            {"codigo": 500, "mensaje": "Error interno al seguir usuario"}
+          ]
         },
         {
           "metodo": "POST",
           "ruta": "/api/users/{username}/unfollow",
-          "descripcion": "Dejar de seguir a un usuario (requiere JWT)."
+          "descripcion": "Dejar de seguir a un usuario (requiere JWT).",
+          "respuesta_200": {
+            "message": "Unfollowed usuario_ejemplo"
+          },
+          "errores": [
+            {"codigo": 400, "mensaje": "No sigues a este usuario"},
+            {"codigo": 401, "mensaje": "No autorizado o token inválido"},
+            {"codigo": 404, "mensaje": "Usuario no encontrado"},
+            {"codigo": 500, "mensaje": "Error interno al dejar de seguir usuario"}
+          ]
         }
       ]
     },
@@ -123,65 +223,316 @@
       "endpoints": [
         {
           "metodo": "POST",
-          "ruta": "/api/post/posts",
+          "ruta": "/api/posts",
           "descripcion": "Crear publicación (requiere JWT).",
           "body": {
-            "content": "string",
-            "media_urls": ["string", "..."]
-          }
+            "content": "string (requerido, máx. 280 caracteres)",
+            "media_urls": ["string", "..."] 
+          },
+          "ejemplo_solicitud": {
+            "content": "¡Mi primer post!",
+            "media_urls": ["https://ejemplo.com/imagen.jpg"]
+          },
+          "respuesta_201": {
+            "_id": "post_123",
+            "user_id": "user_456",
+            "content": "¡Mi primer post!",
+            "media_urls": ["https://ejemplo.com/imagen.jpg"],
+            "parent_post_id": null,
+            "created_at": "2025-04-26T10:00:00Z",
+            "likes_count": 0,
+            "comments_count": 0
+          },
+          "errores": [
+            {"codigo": 400, "mensaje": "Contenido excede 280 caracteres"},
+            {"codigo": 401, "mensaje": "No autorizado o token inválido"},
+            {"codigo": 500, "mensaje": "Error interno al crear publicación"}
+          ]
         },
         {
           "metodo": "GET",
-          "ruta": "/api/post/posts",
+          "ruta": "/api/posts",
           "descripcion": "Obtener publicaciones (feed o por usuario).",
-          "query_params": ["page", "limit", "username (opcional)"]
+          "query_params": [
+            {"nombre": "limit", "tipo": "integer", "descripcion": "Límite de resultados (default: 20)"},
+            {"nombre": "skip", "tipo": "integer", "descripcion": "Número de resultados a saltar (default: 0)"},
+            {"nombre": "user_id", "tipo": "string", "descripcion": "Filtrar por usuario (opcional)"}
+          ],
+          "respuesta_200": {
+            "posts": [
+              {
+                "_id": "post_123",
+                "user_id": "user_456",
+                "username": "usuario_ejemplo",
+                "content": "¡Mi primer post!",
+                "media_urls": ["https://ejemplo.com/imagen.jpg"],
+                "parent_post_id": null,
+                "created_at": "2025-04-26T10:00:00Z",
+                "likes_count": 10,
+                "comments_count": 5
+              }
+            ],
+            "total": 1
+          },
+          "errores": [
+            {"codigo": 500, "mensaje": "Error interno al obtener publicaciones"}
+          ]
         },
         {
           "metodo": "GET",
-          "ruta": "/api/post/posts/{post_id}",
-          "descripcion": "Obtener publicación por ID."
+          "ruta": "/api/posts/{post_id}",
+          "descripcion": "Obtener publicación por ID.",
+          "respuesta_200": {
+            "_id": "post_123",
+            "user_id": "user_456",
+            "username": "usuario_ejemplo",
+            "content": "¡Mi primer post!",
+            "media_urls": ["https://ejemplo.com/imagen.jpg"],
+            "parent_post_id": null,
+            "created_at": "2025-04-26T10:00:00Z",
+            "likes_count": 10,
+            "comments_count": 5
+          },
+          "errores": [
+            {"codigo": 404, "mensaje": "Publicación no encontrada"},
+            {"codigo": 500, "mensaje": "Error interno al obtener publicación"}
+          ]
         },
         {
           "metodo": "PUT",
-          "ruta": "/api/post/posts/{post_id}",
+          "ruta": "/api/posts/{post_id}",
           "descripcion": "Editar publicación (requiere JWT).",
           "body": {
-            "content": "string",
+            "content": "string (requerido, máx. 280 caracteres)",
             "media_urls": ["string", "..."]
-          }
+          },
+          "ejemplo_solicitud": {
+            "content": "¡Mi post editado!",
+            "media_urls": ["https://ejemplo.com/nueva_imagen.jpg"]
+          },
+          "respuesta_200": {
+            "message": "Post updated successfully",
+            "post": {
+              "_id": "post_123",
+              "content": "¡Mi post editado!",
+              "media_urls": ["https://ejemplo.com/nueva_imagen.jpg"]
+            }
+          },
+          "errores": [
+            {"codigo": 400, "mensaje": "Contenido excede 280 caracteres"},
+            {"codigo": 401, "mensaje": "No autorizado o token inválido"},
+            {"codigo": 403, "mensaje": "No tienes permiso para editar esta publicación"},
+            {"codigo": 404, "mensaje": "Publicación no encontrada"},
+            {"codigo": 500, "mensaje": "Error interno al editar publicación"}
+          ]
         },
         {
           "metodo": "DELETE",
-          "ruta": "/api/post/posts/{post_id}",
-          "descripcion": "Eliminar publicación (requiere JWT)."
+          "ruta": "/api/posts/{post_id}",
+          "descripcion": "Eliminar publicación (requiere JWT).",
+          "respuesta_200": {
+            "message": "Post deleted successfully"
+          },
+          "errores": [
+            {"codigo": 401, "mensaje": "No autorizado o token inválido"},
+            {"codigo": 403, "mensaje": "No tienes permiso para eliminar esta publicación"},
+            {"codigo": 404, "mensaje": "Publicación no encontrada"},
+            {"codigo": 500, "mensaje": "Error interno al eliminar publicación"}
+          ]
         },
         {
           "metodo": "GET",
-          "ruta": "/api/post/feed",
+          "ruta": "/api/feed",
           "descripcion": "Obtener feed personalizado (requiere JWT).",
-          "query_params": ["page", "limit"]
+          "query_params": [
+            {"nombre": "limit", "tipo": "integer", "descripcion": "Límite de resultados (default: 20)"},
+            {"nombre": "skip", "tipo": "integer", "descripcion": "Número de resultados a saltar (default: 0)"}
+          ],
+          "respuesta_200": {
+            "posts": [
+              {
+                "_id": "post_123",
+                "user_id": "user_456",
+                "username": "usuario_ejemplo",
+                "content": "¡Mi primer post!",
+                "media_urls": ["https://ejemplo.com/imagen.jpg"],
+                "parent_post_id": null,
+                "created_at": "2025-04-26T10:00:00Z",
+                "likes_count": 10,
+                "comments_count": 5
+              }
+            ],
+            "total": 1
+          },
+          "errores": [
+            {"codigo": 401, "mensaje": "No autorizado o token inválido"},
+            {"codigo": 500, "mensaje": "Error interno al obtener feed"}
+          ]
         },
         {
           "metodo": "POST",
-          "ruta": "/api/post/posts/{post_id}/like",
-          "descripcion": "Dar like a una publicación (requiere JWT)."
+          "ruta": "/api/posts/{post_id}/like",
+          "descripcion": "Dar like a una publicación (requiere JWT).",
+          "respuesta_200": {
+            "message": "Post liked successfully"
+          },
+          "errores": [
+            {"codigo": 400, "mensaje": "Ya has dado like a esta publicación"},
+            {"codigo": 401, "mensaje": "No autorizado o token inválido"},
+            {"codigo": 404, "mensaje": "Publicación no encontrada"},
+            {"codigo": 500, "mensaje": "Error interno al dar like"}
+          ]
+        },
+        {
+          "metodo": "POST",
+          "ruta": "/api/posts/{post_id}/comment",
+          "descripcion": "Comentar una publicación (requiere JWT).",
+          "body": {
+            "username": "string (requerido)",
+            "profile_pic_url": "string (requerido)",
+            "text_comment": "string (requerido, máx. 280 caracteres)"
+          },
+          "ejemplo_solicitud": {
+            "username": "usuario_ejemplo",
+            "profile_pic_url": "https://ejemplo.com/imagen.jpg",
+            "text_comment": "¡Gran post!"
+          },
+          "respuesta_201": {
+            "data": {
+              "_id": "comment_789",
+              "post_id": "post_123",
+              "username": "usuario_ejemplo",
+              "profile_pic_url": "https://ejemplo.com/imagen.jpg",
+              "text_comment": "¡Gran post!",
+              "created_at": "2025-04-26T10:05:00Z"
+            }
+          },
+          "errores": [
+            {"codigo": 400, "mensaje": "Datos inválidos o faltantes"},
+            {"codigo": 401, "mensaje": "No autorizado o token inválido"},
+            {"codigo": 404, "mensaje": "Publicación no encontrada"},
+            {"codigo": 500, "mensaje": "Error interno al comentar"}
+          ]
+        }
+      ]
+    },
+    {
+      "grupo": "Notificaciones",
+      "endpoints": [
+        {
+          "metodo": "GET",
+          "ruta": "/api/notification/{user_id}",
+          "descripcion": "Obtener notificaciones de un usuario (requiere JWT).",
+          "respuesta_200": {
+            "notifications": [
+              {
+                "_id": "notif_123",
+                "user_id": "user_456",
+                "message": "Usuario_ejemplo te ha seguido",
+                "created_at": "2025-04-26T10:00:00Z",
+                "read": false
+              }
+            ]
+          },
+          "errores": [
+            {"codigo": 401, "mensaje": "No autorizado o token inválido"},
+            {"codigo": 404, "mensaje": "Empty notifications tray"},
+            {"codigo": 500, "mensaje": "Error interno al obtener notificaciones"}
+          ]
+        },
+        {
+          "metodo": "DELETE",
+          "ruta": "/api/notification/{user_id}",
+          "descripcion": "Eliminar notificaciones de un usuario (requiere JWT).",
+          "respuesta_200": {
+            "message": "Notification deleted"
+          },
+          "errores": [
+            {"codigo": 401, "mensaje": "No autorizado o token inválido"},
+            {"codigo": 500, "mensaje": "No se pudo eliminar la notificación"}
+          ]
+        }
+      ]
+    },
+    {
+      "grupo": "WebSockets",
+      "endpoints": [
+        {
+          "evento": "join_room",
+          "descripcion": "Unirse a una sala de notificaciones.",
+          "datos": {
+            "user_id": "string (ID del usuario)"
+          },
+          "ejemplo": {
+            "user_id": "user_456"
+          }
+        },
+        {
+          "evento": "send_notification",
+          "descripcion": "Enviar una notificación a un usuario.",
+          "datos": {
+            "to_user_id": "string (ID del usuario destinatario)",
+            "message": "string (mensaje de notificación)"
+          },
+          "ejemplo": {
+            "to_user_id": "user_789",
+            "message": "Usuario_ejemplo te ha seguido"
+          }
+        },
+        {
+          "evento": "notification",
+          "descripcion": "Evento emitido cuando un usuario recibe una notificación.",
+          "datos": {
+            "message": "string (mensaje de notificación)"
+          },
+          "ejemplo": {
+            "message": "Usuario_ejemplo te ha seguido"
+          }
         }
       ]
     }
   ],
   "seguridad": {
-    "jwt": "El token JWT se obtiene al iniciar sesión o registrarse y debe enviarse en el header Authorization: Bearer <token> para las rutas protegidas."
+    "jwt": "El token JWT se obtiene al iniciar sesión o registrarse y debe enviarse en el header Authorization: Bearer <token> para las rutas protegidas.",
+    "expiracion": "Los tokens JWT expiran después de 24 horas.",
+    "claims": {
+      "identity": "ID del usuario",
+      "username": "Nombre de usuario",
+      "exp": "Tiempo de expiración"
+    }
   },
   "errores_comunes": [
     {"codigo": 400, "descripcion": "Datos inválidos o faltantes."},
     {"codigo": 401, "descripcion": "No autorizado o token inválido."},
+    {"codigo": 403, "descripcion": "Prohibido, no tienes permisos suficientes."},
     {"codigo": 404, "descripcion": "Recurso no encontrado."},
+    {"codigo": 429, "descripcion": "Demasiadas solicitudes (rate limiting)."},
     {"codigo": 500, "descripcion": "Error interno del servidor."}
   ],
   "notas": [
     "Todos los cuerpos de las solicitudes deben estar en formato JSON.",
-    "Reemplaza {username} y {post_id} por los valores reales.",
+    "Reemplaza {username}, {post_id} y {user_id} por los valores reales.",
     "Las contraseñas nunca se retornan en las respuestas.",
-    "El sistema utiliza MongoDB y JWT para autenticación y almacenamiento."
+    "El sistema utiliza MongoDB y JWT para autenticación y almacenamiento.",
+    "Se implementa rate limiting para prevenir abusos (100 solicitudes/minuto por usuario).",
+    "Las notificaciones en tiempo real se implementan mediante WebSockets (Socket.IO)."
+  ],
+  "ejemplos_curl": [
+    {
+      "descripcion": "Registrar un nuevo usuario",
+      "comando": "curl -X POST http://localhost:5000/api/auth/signup -H \"Content-Type: application/json\" -d '{\"username\":\"usuario_ejemplo\",\"email\":\"usuario@ejemplo.com\",\"password\":\"contraseña123\"}'"
+    },
+    {
+      "descripcion": "Iniciar sesión",
+      "comando": "curl -X POST http://localhost:5000/api/auth/login -H \"Content-Type: application/json\" -d '{\"username_or_email\":\"usuario_ejemplo\",\"password\":\"contraseña123\"}'"
+    },
+    {
+      "descripcion": "Crear una publicación (con token JWT)",
+      "comando": "curl -X POST http://localhost:5000/api/posts -H \"Content-Type: application/json\" -H \"Authorization: Bearer <token>\" -d '{\"content\":\"¡Mi primer post!\"}'"
+    },
+    {
+      "descripcion": "Obtener feed de publicaciones",
+      "comando": "curl -X GET http://localhost:5000/api/posts?limit=10&skip=0 -H \"Authorization: Bearer <token>\""
+    }
   ]
 }
