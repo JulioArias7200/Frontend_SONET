@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import AnimatedList from "@/components/ui/AnimatedList";
 import { 
   HomeIcon, 
   UserIcon, 
@@ -23,7 +24,7 @@ export function MobileSidebar() {
   // Manejar cierre de sesión
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate('/home');
   };
 
   // Obtener iniciales del usuario para el avatar fallback
@@ -31,6 +32,7 @@ export function MobileSidebar() {
     if (!user || !user.username) return "U";
     return user.username.substring(0, 2).toUpperCase();
   };
+  const items = ['Item 1', 'Item 2', 'Item 3', 'Item 4', 'Item 5', 'Item 6', 'Item 7', 'Item 8', 'Item 9', 'Item 10']; 
 
   return (
     <Sheet>
@@ -56,6 +58,14 @@ export function MobileSidebar() {
           </div>
           
           <nav className="space-y-1 text-2xl">
+  
+            <AnimatedList
+              items={items}
+              onItemSelect={(item, index) => console.log(item, index)}
+              showGradients={true}
+              enableArrowNavigation={true}
+              displayScrollbar={true}
+            />
             <NavItem icon={<HomeIcon className="mr-4 h-5 w-5" />} label="Inicio" to="/" />
             <NavItem icon={<SearchIcon className="mr-4 h-5 w-5" />} label="Explorar" to="/explore" />
             <NavItem icon={<BellIcon className="mr-4 h-5 w-5" />} label="Notificaciones" to="/notifications" />
@@ -70,7 +80,7 @@ export function MobileSidebar() {
               if (isAuthenticated) {
                 navigate('/feed');
               } else {
-                navigate('/login');
+                navigate('/home');
               }
             }}
           >
@@ -116,7 +126,7 @@ export function MobileSidebar() {
                     if (isAuthenticated) {
                       navigate('/profile');
                     } else {
-                      navigate('/login');
+                      navigate('/home');
                     }
                   }}
                   title="Ver y editar perfil"

@@ -21,7 +21,7 @@ export function Sidebar() {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate('/home');
   };
 
   // Obtener iniciales del usuario para el avatar fallback
@@ -88,7 +88,7 @@ export function Sidebar() {
                     navigate('/profile');
                   } else {
                     // Si no hay usuario autenticado, redirigir al login
-                    navigate('/login');
+                    navigate('/home');
                   }
                 }}
                 title="Ver y editar perfil"

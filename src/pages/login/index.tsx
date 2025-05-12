@@ -9,6 +9,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 import authService from '@/api/services/authService';
+import Aurora from '@/components/ui/Aurora';
+import SpotlightCard from '@/components/ui/SpotlightCard';
 
 // Esquema de validación
 const loginSchema = z.object({
@@ -60,8 +62,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-background">
-      <Card className="w-full max-w-md">
+    <div className="flex justify-center items-center min-h-screen relative overflow-hidden">
+      <div className="fixed inset-0 z-0 h-screen w-screen">
+        <Aurora
+          colorStops={["#00D8FF", "#7CFF67", "#00D8FF"]}
+          blend={0.5}
+          amplitude={1.0}
+          speed={0.5}
+        />
+      </div>
+      <Card className="w-full max-w-md relative z-10 bg-card/60 backdrop-blur-md border-0 shadow-xl">
         <CardHeader>
           <CardTitle>Iniciar Sesión</CardTitle>
           <CardDescription>

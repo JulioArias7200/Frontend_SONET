@@ -7,13 +7,32 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Home, Users, MessageSquare, LogIn, UserPlus, Github, Twitter, Instagram, Mail } from 'lucide-react';
 //Background waves y LetterGlitch
 import Waves from '@/components/ui/waves';
-import LetterGlitch from '@/components/ui/LetterGlitch';
+import PixelCard from '@/components/ui/PixelCard';
+import RotatingText from '@/components/ui/RotatingText'
+
 
 
 
 export default function HomePage() {
   const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
+  const [scrolled, setScrolled] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      const offset = window.scrollY;
+      if (offset > 50) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -25,9 +44,10 @@ export default function HomePage() {
 
   return (
     
-    <div className="flex flex-col min-h-screen">
-    
-    <Waves
+    <div className="flex flex-col min-h-screen overflow-y-auto">
+    {/* Fondo con ondas */}
+    <div className="fixed inset-0 z-0 w-full h-full pointer-events-none">
+      <Waves
         lineColor="#261893"
         backgroundColor="rgba(0, 0, 0, 00)"
         waveSpeedX={0.02}
@@ -39,22 +59,21 @@ export default function HomePage() {
         maxCursorMove={120}
         xGap={12}
         yGap={36}
-        />
+      />
+    </div>
       {/* Header */}
 
-      <header className="sticky top-0 z-10 bg-background/40 backdrop-blur-sm border-b py-3 px-4 shadow-sm rounded-lg">
-        <div className="container mx-auto flex justify-between items-center">
+      <header className={`fixed top-3 left-20 right-20 z-50 bg-background/10 backdrop-blur-sm border-b shadow-sm transition-all duration-300 ease-in-out ${scrolled ? 'py-0.5 px-1' : 'py-2 px-3'}`}>
+        <div className={`container mx-auto flex justify-between items-center transition-all duration-300 ease-in-out ${scrolled ? 'py-1' : 'py-2'}`}>
           <div className="flex items-center gap-2">
-            <div className="bg-primary text-primary-foreground p-1.5 rounded">
-              <MessageSquare size={20} />
-            </div>
+           
             <h1 className="text-xl font-bold">Red Social</h1>
           </div>
          
           
           <div className="flex ">
           {!isAuthenticated ? (
-              <div className="flex flex-col sm:flex-row gap-4 mt-6">
+              <div className="flex flex-col sm:flex-row gap-4 ">
                 <Button size="lg" onClick={() => navigate('/login')}>
                   <LogIn className="mr-2" /> Iniciar Sesión
                 </Button>
@@ -72,123 +91,80 @@ export default function HomePage() {
       </header>
 
       {/* Contenido principal */}
-      <main className="flex-grow">
+      <main className="flex-grow pt-16"> {/* Añadimos pt-16 para dar espacio al header fijo */}
         <div className="container mx-auto px-4 py-12">
-          <div className="flex flex-col items-center justify-center space-y-8">
-            <h1 className="z-20 text-4xl font-bold text-center">Bienvenido a nuestra Red Social</h1>
-            <p className=" z-20 text-xl text-center text-muted-foreground max-w-2xl">
-              Conecta con amigos, comparte momentos y descubre contenido interesante en nuestra plataforma.
-            </p>
-
-
-
-            <div className="grid  grid-cols-1 md:grid-cols-3 z-20 gap-6 w-full max-w-5xl mt-12">
-              <Card className='bg-background/40'>
-                <CardHeader >
-                  <CardTitle>Conecta</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Users className="h-12 w-12 mb-4 text-primary" />
-                  <CardDescription>
-                    Encuentra y conecta con amigos, familiares y colegas para mantenerte en contacto.
-                  </CardDescription>
-                </CardContent>
-              </Card>
-
-              <Card className='bg-background/40 '>
-                <CardHeader>
-                  <CardTitle>Comparte</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <MessageSquare className="h-12 w-12 mb-4 text-primary" />
-                  <CardDescription>
-                    Comparte tus pensamientos, fotos y momentos importantes con tu red.
-                  </CardDescription>
-                </CardContent>
-              </Card>
-
-              <Card className='bg-background/40'>
-                <CardHeader>
-                  <CardTitle>Descubre</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Home className="h-12 w-12 mb-4 text-primary" />
-                  <CardDescription>
-                    Explora contenido interesante y mantente al día con las últimas tendencias.
-                  </CardDescription>
-                </CardContent>
-              </Card>
+          <div className="flex flex-col items-center justify-center space-y-2">
+            <div className='z-10'>
+                <div className='flex justify-center items-center grid-cols-1 md:grid-cols-2 h-screen w-full -mt-30'>
+                    <h1 className="z-20 text-4xl md:text-5xl font-bold text-center flex items-center justify-center">
+                        Únete y
+                        <span className="ml-2">
+                        <RotatingText
+                            texts={['Comenta', 'Postea', 'Descubre', 'Listo!']}
+                            mainClassName="text-4xl md:text-5xl px-2 sm:px-2 md:px-3 bg-white text-black overflow-hidden py-0.5 sm:py-1 md:py-2 justify-center rounded-lg"
+                            staggerFrom={"last"}
+                            initial={{ y: "100%" }}
+                            animate={{ y: 0 }}
+                            exit={{ y: "-120%" }}
+                            staggerDuration={0.025}
+                            splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
+                            transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                            rotationInterval={2000}
+                        />
+                        </span>
+                    </h1>
+                </div>
+                <p className="font-bold z-10 text-xl text-center text-muted-foreground ">
+                    Conecta con amigos, comparte momentos y descubre.
+                </p>
+            
             </div>
 
-            <Alert className="mt-8 max-w-2xl">
-              <AlertTitle>¡Únete a nuestra comunidad!</AlertTitle>
-              <AlertDescription>
-                Millones de usuarios ya están compartiendo y conectando en nuestra plataforma. ¡No te quedes fuera!
-              </AlertDescription>
-            </Alert>
+            <div className="grid grid-cols-1 md:grid-cols-3 z-10 gap-6 w-full max-w-5xl mx-auto">
+                <PixelCard variant="pink" className="relative">
+                  <Card className="z-30 bg-background/40 absolute inset-0 flex flex-col m-4 h-[calc(100%-2rem)]">
+                    <CardHeader>
+                      <CardTitle>Conecta</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription>
+                        Encuentra y conecta con amigos, familiares y colegas para mantenerte en contacto.
+                      </CardDescription>
+                    </CardContent>
+                  </Card>
+                </PixelCard>
+
+                <PixelCard variant="pink" className="relative">
+                  <Card className="bg-background/40 absolute inset-0 flex flex-col m-4 h-[calc(100%-2rem)]">
+                    <CardHeader>
+                      <CardTitle>Comparte</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription>
+                        Comparte tus pensamientos, fotos y momentos importantes con tu red.
+                      </CardDescription>
+                    </CardContent>
+                  </Card>
+                </PixelCard>
+
+                <PixelCard variant="pink" className="relative">
+                  <Card className="bg-background/40 absolute inset-0 flex flex-col m-4 h-[calc(100%-2rem)]">
+                    <CardHeader>
+                      <CardTitle>Descubre</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <CardDescription>
+                        Explora contenido interesante y mantente al día con las últimas tendencias.
+                      </CardDescription>
+                    </CardContent>
+                  </Card>
+                </PixelCard>
+            </div>
           </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-muted py-8 border-t">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="font-bold text-lg mb-4">Red Social</h3>
-              <p className="text-sm text-muted-foreground">
-                Conectando personas y compartiendo momentos desde 2023.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-medium mb-4">Enlaces</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-primary transition-colors">Inicio</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Características</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Acerca de</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Contacto</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-medium mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-primary transition-colors">Términos de servicio</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Política de privacidad</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Cookies</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-medium mb-4">Síguenos</h4>
-              <div className="flex space-x-4">
-                <a href="#" className="hover:text-primary transition-colors" aria-label="Github">
-                  <Github size={20} />
-                </a>
-                <a href="#" className="hover:text-primary transition-colors" aria-label="Twitter">
-                  <Twitter size={20} />
-                </a>
-                <a href="#" className="hover:text-primary transition-colors" aria-label="Instagram">
-                  <Instagram size={20} />
-                </a>
-                <a href="#" className="hover:text-primary transition-colors" aria-label="Email">
-                  <Mail size={20} />
-                </a>
-              </div>
-            </div>
-          </div>
-          
-          <div className="border-t mt-8 pt-6 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} Red Social. Todos los derechos reservados.
-            </p>
-            <p className="text-sm text-muted-foreground mt-2 md:mt-0">
-              Diseñado y desarrollado con ❤️
-            </p>
-          </div>
-        </div>
-      </footer>
+
     </div>
   );
 }
