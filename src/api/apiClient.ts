@@ -1,16 +1,15 @@
 import axios from 'axios';
 import { getToken } from '@/utils/tokenStorage';
 
-// Crear instancia de axios con la URL base
+// Crear una instancia de axios con la URL base
 const apiClient = axios.create({
-  baseURL: 'http://localhost:5000', // URL de tu backend
+  baseURL: 'http://127.0.0.1:2020',
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: false
 });
 
-// Interceptor para añadir el token a todas las peticiones
+// Interceptor para añadir el token a las peticiones
 apiClient.interceptors.request.use(
   (config) => {
     const token = getToken();
@@ -24,15 +23,16 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Interceptor para manejar errores de respuesta
+// Interceptor para manejar respuestas
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   (error) => {
-    // Manejar errores de autenticación (401)
+    // Manejar errores específicos como 401 (no autorizado)
     if (error.response && error.response.status === 401) {
-      // Redirigir al login o manejar token expirado
+      // Aquí podríamos redirigir al login o limpiar el token
       console.error('Error de autenticación:', error);
-      // Aquí podrías implementar un refresh token o redirigir al login
     }
     return Promise.reject(error);
   }

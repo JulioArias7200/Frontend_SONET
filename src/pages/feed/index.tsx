@@ -46,8 +46,7 @@ export default function FeedPage() {
       
       {/* Contenido principal */}
       <div className="flex flex-col min-h-screen">
-        {/* Encabezado */}
-        <FeedHeader />
+
         
         {/* Contenido del feed */}
         <main className="flex-1">
@@ -61,9 +60,9 @@ export default function FeedPage() {
       </div>
       
       {/* Panel derecho (solo visible en pantallas grandes) - Fijo */}
-      <div className="hidden lg:block sticky top-0 h-screen">
+      {/*<div className="hidden lg:block sticky top-0 h-screen">
         <RightPanel />
-      </div>
+      </div> */ }
     </div>
   );
 }

@@ -1,17 +1,17 @@
-// Funciones para manejar el token JWT en localStorage para mayor persistencia
+// Nombre de la clave para el token
+const TOKEN_KEY = 'auth_token';
 
-export const saveToken = (token: string, expiresInDays = 1): void => {
-  // Guardar en localStorage para persistencia entre recargas
-  localStorage.setItem('auth_token', token);
-  
-  // También establecer una fecha de expiración
+// Guardar token en localStorage
+export const saveToken = (token: string, expiresInDays = 7) => {
   const expirationDate = new Date();
   expirationDate.setDate(expirationDate.getDate() + expiresInDays);
+  
+  localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem('token_expiry', expirationDate.toISOString());
 };
 
 export const getToken = (): string | null => {
-  const token = localStorage.getItem('auth_token');
+  const token = localStorage.getItem(TOKEN_KEY);
   const expiry = localStorage.getItem('token_expiry');
   
   // Verificar si el token ha expirado
@@ -30,7 +30,7 @@ export const getToken = (): string | null => {
 };
 
 export const removeToken = (): void => {
-  localStorage.removeItem('auth_token');
+  localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem('token_expiry');
 };
 

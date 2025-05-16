@@ -31,15 +31,13 @@ export function RightPanel() {
       try {
         setLoading(true);
         
-        // Intentar obtener usuarios de la API con el token JWT
+        // Intentar obtener usuarios de la API
         try {
-          console.log('Obteniendo usuarios de la API con token JWT...');
-          const token = localStorage.getItem('token'); // O como sea que almacenes tu token
-          console.log('Token disponible:', !!token);
+          console.log('Obteniendo usuarios de la API...');
           
           // Verificar si el backend está disponible antes de hacer la solicitud
           try {
-            await fetch('http://localhost:5000/api/health', { method: 'HEAD' });
+            await fetch('http://127.0.0.1:2020/api/health', { method: 'HEAD' });
           } catch (healthError) {
             console.error('El servidor backend no está disponible:', healthError);
             throw new Error('El servidor backend no está disponible');

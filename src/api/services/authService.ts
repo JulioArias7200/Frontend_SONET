@@ -1,9 +1,8 @@
 import apiClient from '../apiClient';
 import { ApiResponse } from '@/types/api';
 import { User } from '@/types/models';
-import { saveToken, removeToken } from '@/utils/tokenStorage';
 
-interface LoginCredentials {
+interface LoginData {
   username_or_email: string;
   password: string;
 }
@@ -20,85 +19,64 @@ interface SignupData {
 interface AuthResponse {
   token: string;
   user: User;
-  message?: string;
 }
 
 const authService = {
-  login: async (credentials: LoginCredentials): Promise<ApiResponse<AuthResponse>> => {
+  // Iniciar sesión
+  login: async (data: LoginData): Promise<ApiResponse<AuthResponse>> => {
     try {
-      const response = await apiClient.post('/api/auth/login', credentials);
-      
-      if (response.data.token) {
-        // Guardar el token con una duración de 1 día
-        saveToken(response.data.token, 1);
-        
-        console.log('Token guardado correctamente');
-      }
-      
+      const response = await apiClient.post('/api/auth/login', data);
       return {
         success: true,
-        data: {
-          token: response.data.token,
-          user: {
-            _id: response.data.user.id || response.data.user._id,
-            username: response.data.user.username,
-            email: response.data.user.email,
-            bio: response.data.user.bio || '',
-            profile_pic_url: response.data.user.profile_pic_url || '',
-          }
-        },
-        message: response.data.message || 'Inicio de sesión exitoso'
+        data: response.data,
+        message: 'Inicio de sesión exitoso'
       };
     } catch (error: any) {
-      console.error('Error de login:', error);
+      console.error('Error en login:', error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Error al iniciar sesión',
-        error: error.message
+        error: error.response?.data?.message || 'Error al iniciar sesión',
+        message: 'Error al iniciar sesión'
       };
     }
   },
 
-  signup: async (userData: SignupData): Promise<ApiResponse<AuthResponse>> => {
+  // Registrar usuario
+  signup: async (data: SignupData): Promise<ApiResponse<AuthResponse>> => {
     try {
-      const response = await apiClient.post('/api/auth/signup', userData);
-      
-      if (response.data.token) {
-        // Guardar el token con una duración de 1 día
-        saveToken(response.data.token, 1);
-      }
-      
+      const response = await apiClient.post('/api/auth/signup', data);
       return {
         success: true,
-        data: {
-          token: response.data.token,
-          user: {
-            _id: response.data.user_id || response.data.user.id,
-            username: userData.username,
-            email: userData.email,
-            bio: userData.bio || '',
-            profile_pic_url: userData.profile_pic_url || '',
-          }
-        },
-        message: response.data.message || 'Registro exitoso'
+        data: response.data,
+        message: 'Registro exitoso'
       };
     } catch (error: any) {
+      console.error('Error en signup:', error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Error al registrar usuario',
-        error: error.message
+        error: error.response?.data?.message || 'Error al registrar usuario',
+        message: 'Error al registrar usuario'
       };
     }
   },
 
-  logout: async (): Promise<ApiResponse<null>> => {
-    // Eliminar el token almacenado
-    removeToken();
-    
-    return {
-      success: true,
-      message: 'Sesión cerrada correctamente'
-    };
+  // Verificar token
+  verifyToken: async (): Promise<ApiResponse<User>> => {
+    try {
+      const response = await apiClient.get('/api/auth/verify');
+      return {
+        success: true,
+        data: response.data.user,
+        message: 'Token verificado'
+      };
+    } catch (error: any) {
+      console.error('Error al verificar token:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Error al verificar token',
+        message: 'Error al verificar token'
+      };
+    }
   }
 };
 

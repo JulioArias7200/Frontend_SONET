@@ -1,49 +1,45 @@
 export interface User {
-  _id?: string;
-  id?: string;
+  _id: string;
   username: string;
-  email?: string;
+  email: string;
   bio?: string;
   profile_pic_url?: string;
-  profile_image_url?: string; // Alias para compatibilidad
   is_private?: boolean;
   followers_count?: number;
   following_count?: number;
   created_at?: string;
-  avatar?: string; // Alias para compatibilidad
+  avatar?: string;
 }
 
 export interface Post {
-  _id?: string;
-  id?: string;
-  user_id?: string;
-  author?: User;
-  username?: string;
+  _id: string;
+  user_id: string;
   content: string;
   media_urls?: string[];
-  parent_post_id?: string | null;
-  created_at?: string;
+  created_at: string;
+  updated_at?: string;
   likes_count?: number;
   comments_count?: number;
-  reposts_count?: number;
-  profile_pic_url?: string;
+  username?: string;
+  user_profile_pic?: string;
 }
 
 export interface Comment {
-  _id?: string;
-  id?: string;
+  _id: string;
   post_id: string;
-  username: string;
-  profile_pic_url?: string;
-  text_comment: string;
-  created_at?: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  username?: string;
+  user_profile_pic?: string;
 }
 
 export interface Notification {
-  _id?: string;
-  id?: string;
+  _id: string;
   user_id: string;
-  message: string;
-  created_at?: string;
-  read?: boolean;
+  type: string;
+  content: string;
+  related_id?: string;
+  is_read: boolean;
+  created_at: string;
 }

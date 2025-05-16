@@ -4,20 +4,21 @@ import { ProfileEdit } from "@/components/profile/profile-edit";
 import { useAuth } from "@/context/AuthContext";
 import userService from "@/api/services/userService";
 import { useNavigate } from "react-router-dom";
+import { User } from "@/types/models"; // Asegúrate de que este import exista
 
 export default function ProfilePage() {
-  const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [profileData, setProfileData] = useState(null);
-  const [error, setError] = useState(null);
+  const [profileData, setProfileData] = useState<User | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     // Si la autenticación está cargando, esperamos
     if (authLoading) return;
 
-    // Si no hay autenticación después de cargar, redirigimos al login
-    if (!isAuthenticated && !authLoading) {
+    // Si no hay usuario después de cargar, redirigimos al login
+    if (!user && !authLoading) {
       navigate('/login');
       return;
     }
@@ -38,14 +39,14 @@ export default function ProfilePage() {
           setLoading(false);
         }
       } else {
-        // Si no hay ID de usuario pero está autenticado, usamos los datos del contexto
+        // Si no hay ID de usuario pero hay usuario, usamos los datos del contexto
         setProfileData(user);
         setLoading(false);
       }
     };
 
     fetchUserProfile();
-  }, [user, authLoading, isAuthenticated, navigate]);
+  }, [user, authLoading, navigate]);
 
   // Mostramos carga mientras el contexto de autenticación o los datos del perfil están cargando
   if (authLoading || loading) {
@@ -66,7 +67,7 @@ export default function ProfilePage() {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-background">
-      <ProfileEdit user={profileData || user} />
+      {(profileData || user) && <ProfileEdit user={profileData || user as User} />}
     </div>
   );
 }
