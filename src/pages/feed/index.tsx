@@ -4,10 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Sidebar } from "./components/Sidebar";
 import { MobileSidebar } from "./components/MobileSidebar";
-import { FeedHeader } from "./components/FeedHeader";
 import { FeedContent } from "@/components/feed/feed-content";
 import { RightPanel } from "./components/RightPanel";
 import { MobilePostButton } from "./components/MobilePostButton";
+import Squares from '@/components/ui/Squares';
+  
 
 export default function FeedPage() {
   const { isAuthenticated, loading } = useAuth();
@@ -38,16 +39,26 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="grid grid-cols-[auto_1fr_auto] bg-background w-full max-w-screen-2xl mx-auto">
+    <div className="grid grid-cols-[auto_1fr_auto] bg-background w-full max-w-screen-2xl  relative">
+      {/* Componente Squares como fondo fijo */}
+      <div className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none">
+        <Squares 
+          speed={0.1} 
+          squareSize={80}
+          direction='down' // up, down, left, right, diagonal
+          borderColor='#261893'
+          hoverFillColor='#261893'
+        />
+      </div>
+      
       {/* Sidebar para pantallas medianas y grandes - Fijo */}
-      <div className="hidden md:block sticky top-0 h-screen">
+      <div className="hidden md:block sticky top-0 h-screen z-0">
         <Sidebar />
       </div>
       
       {/* Contenido principal */}
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen z-10">
 
-        
         {/* Contenido del feed */}
         <main className="flex-1">
           <div className="max-w-3xl mx-auto p-4">
