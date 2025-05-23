@@ -2,26 +2,30 @@ import apiClient from '../apiClient';
 import { ApiResponse } from '@/types/api';
 import { User } from '@/types/models';
 
-const userService = {
-  // Obtener usuario actual
-  getCurrentUser: async (): Promise<ApiResponse<User>> => {
-    try {
-      const response = await apiClient.get('/api/users/profile');
-      return {
-        success: true,
-        data: response.data,
-        message: 'Perfil obtenido correctamente'
-      };
-    } catch (error: any) {
-      console.error('Error al obtener perfil:', error);
-      return {
-        success: false,
-        error: error.response?.data?.message || 'Error al obtener perfil',
-        message: 'Error al obtener perfil'
-      };
-    }
-  },
+// Definir getCurrentUser como función independiente
+export const getCurrentUser = async (): Promise<ApiResponse<User>> => {
+  try {
+    // Modificar esta línea para usar la ruta correcta del backend
+    const response = await apiClient.get('/api/auth/profile');
+    return {
+      success: true,
+      data: response.data,
+      message: 'Perfil obtenido correctamente'
+    };
+  } catch (error: any) {
+    console.error('Error al obtener perfil:', error);
+    return {
+      success: false,
+      error: error.response?.data?.message || 'Error al obtener perfil',
+      message: 'Error al obtener perfil'
+    };
+  }
+};
 
+const userService = {
+  // Referencia a la función independiente
+  getCurrentUser,
+  
   // Obtener usuario por ID
   getUserById: async (userId: string): Promise<ApiResponse<User>> => {
     try {
@@ -42,6 +46,7 @@ const userService = {
   },
 
   // Obtener todos los usuarios
+  // Esta función podría no tener un endpoint correspondiente en el backend
   getAllUsers: async (): Promise<ApiResponse<User[]>> => {
     try {
       const response = await apiClient.get('/api/users');
@@ -99,4 +104,39 @@ const userService = {
   }
 };
 
-export default userService;
+/**
+ * Obtiene usuarios recomendados para el usuario actual
+ * @returns Lista de usuarios recomendados
+ */
+const getRecommendedUsers = async () => {
+  try {
+    const response = await apiClient.get('/api/users/recommend');
+    
+    if (response.status === 200) {
+      return {
+        success: true,
+        data: response.data,
+        message: 'Usuarios recomendados obtenidos correctamente'
+      };
+    } else {
+      return {
+        success: false,
+        data: null,
+        message: response.data.message || 'Error al obtener usuarios recomendados'
+      };
+    }
+  } catch (error: any) {
+    console.error('Error en getRecommendedUsers:', error);
+    return {
+      success: false,
+      data: null,
+      message: error.response?.data?.message || error.message || 'Error al obtener usuarios recomendados'
+    };
+  }
+};
+
+// Asegúrate de que getRecommendedUsers esté incluido en el export
+export default {
+  ...userService,
+  getRecommendedUsers,
+};

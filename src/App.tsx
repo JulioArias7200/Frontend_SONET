@@ -13,6 +13,9 @@ import FeedPage from '@/pages/feed';
 import PublicRoute from '@/components/auth/PublicRoute';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 
+// Importación del componente de perfil
+import UserProfile from '@/components/profile/UserProfile';
+
 import './App.css';
 
 function App() {
@@ -41,7 +44,7 @@ function App() {
             } />
             
             {/* Rutas privadas - solo para usuarios autenticados */}
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile" element={<UserProfile />} />
             <Route path="/profile/:userId" element={<ProfilePage />} />
             <Route path="/feed" element={<FeedPage />} />
             

@@ -38,14 +38,11 @@ export function Sidebar() {
             <XIcon className="h-6 w-6" />
           </div>
           <div className="flex flex-col">
-            <span className="font-semibold">Red Social</span>
-            <span className="text-xs text-muted-foreground">Plataforma</span>
+            <span className="font-semibold"> S O N E T</span>
           </div>
         </div>
         
-        <div className="mb-4">
-          <h3 className="text-sm font-medium text-muted-foreground mb-2">Plataforma</h3>
-        </div>
+
         
         <nav className="space-y-1">
           <NavItem icon={<HomeIcon className="mr-3 h-5 w-5" />} label="Inicio" to="/" />

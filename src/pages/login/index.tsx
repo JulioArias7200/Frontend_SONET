@@ -73,7 +73,12 @@ export default function LoginPage() {
       </div>
       <Card className="w-full max-w-md relative z-10 bg-card/60 backdrop-blur-md border-0 shadow-xl">
         <CardHeader>
-          <CardTitle>Iniciar Sesión</CardTitle>
+
+          <CardTitle>
+            Iniciar Sesión en 
+            <br/>
+             S O N E T
+          </CardTitle>
           <CardDescription>
             Ingresa tus credenciales para acceder a tu cuenta
           </CardDescription>

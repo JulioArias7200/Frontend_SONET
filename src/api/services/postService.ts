@@ -3,7 +3,7 @@ import { Post } from '@/types/models';
 import { getToken } from '@/utils/tokenStorage';
 
 // URL base del backend
-const API_URL = 'http://127.0.0.1:2020'; // Puerto correcto 2020
+const API_URL = 'http://127.0.0.1:5000'; // Actualizado de 2020 a 5000
 
 // Interfaz simple para crear posts
 interface CreatePostData {

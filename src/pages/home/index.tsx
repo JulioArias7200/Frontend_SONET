@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Home, Users, MessageSquare, LogIn, UserPlus, Github, Twitter, Instagram, Mail } from 'lucide-react';
 //Background waves y LetterGlitch
-import Waves from '@/components/ui/waves';
+import Waves from '@/components/ui/Waves';
 import PixelCard from '@/components/ui/PixelCard';
 import RotatingText from '@/components/ui/RotatingText'
 
@@ -67,7 +67,7 @@ export default function HomePage() {
         <div className={`container mx-auto flex justify-between items-center transition-all duration-300 ease-in-out ${scrolled ? 'py-1' : 'py-2'}`}>
           <div className="flex items-center gap-2">
            
-            <h1 className="text-xl font-bold">Red Social</h1>
+            <h1 className="text-xl font-bold">S O N E T</h1>
           </div>
          
           

@@ -4,11 +4,13 @@ const endpoints = {
   auth: {
     signup: '/api/auth/signup',
     login: '/api/auth/login',
+    profile: '/api/auth/profile',  // Añadir esta línea
   },
   
   // Usuarios
   users: {
-    profile: '/api/users/profile',
+    // Actualizar esta línea para usar la ruta correcta
+    profile: '/api/auth/profile',
     updateProfile: '/api/users/profile',
     updatePrivacy: '/api/users/privacy',
     updateNotifications: '/api/users/notifications',
