@@ -3,7 +3,7 @@ import { ApiResponse } from '../types/api';
 
 // Crear instancia de Axios con configuración base
 const api = axios.create({
-  baseURL: 'http://localhost:5000',
+  baseURL: 'http://127.0.0.1:2020',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

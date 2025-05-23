@@ -5,7 +5,6 @@ import { useAuth } from "@/context/AuthContext";
 import { Sidebar } from "./components/Sidebar";
 import { FeedContent } from "@/components/feed/feed-content";
 import { RightPanel } from "./components/RightPanel";
-import { MobilePostButton } from "./components/MobilePostButton";
 import Squares from '@/components/ui/Squares';
   
 
@@ -54,26 +53,23 @@ export default function FeedPage() {
       <div className="fixed inset-0 z-10 mx-auto w-full max-w-full lg:max-w-[1980px] py-4">
         <div className="grid h-full grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)] gap-3 sm:gap-4">
           {/* Sidebar - 25% */}
-          <div className="hidden md:block bg-blue-900/10  rounded-xl shadow-xl p-3 h-full overflow-hidden border border-blue-500/30">
+          <div className="hidden md:block bg-blue-900/10 rounded-xl shadow-xl p-3 h-full overflow-hidden border border-blue-500/30">
             <Sidebar />
           </div>
           
           {/* Contenido principal - 50% */}
-          <div className="flex flex-col bg-indigo-800/15  rounded-xl shadow-xl p-3 border border-indigo-500/30 h-full overflow-hidden">
-            {/* Contenido del feed con scroll */}
+          <div className="flex flex-col bg-indigo-800/15 rounded-xl shadow-xl p-3 border border-indigo-500/30 h-full overflow-hidden">
+            {/* Contenido del feed con scroll y manejo de errores */}
             <main className="flex-1 overflow-y-scroll overflow-x-hidden h-full scrollbar-thin scrollbar-thumb-indigo-500 scrollbar-track-indigo-900/20">
               <FeedContent />
             </main>
           </div>
           
           {/* Panel derecho - 25% */}
-          <div className="hidden md:block bg-purple-900/15  rounded-xl shadow-xl  h-full overflow-hidden border border-purple-500/30">
+          <div className="hidden md:block bg-purple-900/15 rounded-xl shadow-xl h-full overflow-hidden border border-purple-500/30">
             <RightPanel />
           </div>
         </div>
-        
-        {/* Botón flotante para postear en móvil */}
-        <MobilePostButton />
       </div>
     </div>
   );

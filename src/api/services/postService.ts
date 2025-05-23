@@ -1,9 +1,6 @@
-import axios from 'axios';
 import { Post } from '@/types/models';
 import { getToken } from '@/utils/tokenStorage';
-
-// URL base del backend
-const API_URL = 'http://127.0.0.1:5000'; // Actualizado de 2020 a 5000
+import apiClient from '../apiClient';
 
 // Interfaz simple para crear posts
 interface CreatePostData {
@@ -25,28 +22,6 @@ const getAuthToken = () => {
   return localStorage.getItem('auth_token');
 };
 
-// Cliente HTTP con autenticación dinámica
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-});
-
-// Interceptor para añadir el token de autenticación a cada solicitud
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = getAuthToken();
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
 // Función para obtener información de usuario por ID
 const getUserById = async (userId: string) => {
   try {
@@ -65,16 +40,12 @@ const uploadImage = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
     
-    // Configurar headers específicos para la subida de archivos
-    const config = {
+    // Usar el apiClient configurado pero con headers personalizados para la subida de archivos
+    const response = await apiClient.post('/api/upload/image', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
-        'Authorization': `Bearer ${getAuthToken()}`
       }
-    };
-    
-    // Enviar la solicitud para subir la imagen
-    const response = await axios.post(`${API_URL}/api/upload/image`, formData, config);
+    });
     
     // Devolver la URL de la imagen subida
     return response.data.url;
@@ -104,7 +75,7 @@ const postService = {
       }
       
       // Obtener información de usuario para cada post
-      const formattedPosts = await Promise.all(posts.map(async post => {
+      const formattedPosts = await Promise.all(posts.map(async (post: any) => {
         let userData = null;
         
         // Si el post tiene user_id, intentamos obtener la información del usuario
@@ -147,12 +118,18 @@ const postService = {
   // Obtener feed de publicaciones
   getFeed: async (): Promise<ApiResponse<Post[]>> => {
     try {
+      console.log('Obteniendo feed...');
+      const token = getAuthToken();
+      console.log('Token de autenticación:', token ? 'Presente' : 'No presente');
+      
+      // Usar apiClient en lugar de axios directamente para aprovechar los interceptores
       const response = await apiClient.get('/api/posts/');
-      console.log('Respuesta del servidor (getFeed):', response.data);
+      console.log('Respuesta del servidor (getFeed):', response);
       
       // Verificar si la respuesta tiene la estructura esperada
       let posts = [];
       
+      // Manejar diferentes formatos de respuesta
       if (Array.isArray(response.data)) {
         posts = response.data;
       } else if (response.data && Array.isArray(response.data.posts)) {
@@ -160,33 +137,24 @@ const postService = {
       } else if (response.data && typeof response.data === 'object') {
         // Si es un objeto pero no tiene una propiedad 'posts', intentamos convertirlo a array
         posts = Object.values(response.data);
+      } else if (response.data && response.data.data) {
+        // Si la respuesta tiene un campo data
+        posts = Array.isArray(response.data.data) ? response.data.data : [response.data.data];
       }
       
-      // Obtener información de usuario para cada post
-      const formattedPosts = await Promise.all(posts.map(async post => {
-        let userData = null;
-        
-        // Si el post tiene user_id, intentamos obtener la información del usuario
-        if (post.user_id) {
-          userData = await getUserById(post.user_id);
-        }
-        
-        return {
-          ...post,
-          // Usar datos del usuario si están disponibles, o valores predeterminados
-          username: userData?.username || 
-                   (typeof post.username === 'string' ? post.username : 
-                   typeof post.user_name === 'string' ? post.user_name : 
-                   typeof post.author === 'string' ? post.author : 'Usuario'),
-          user_profile_pic: userData?.profile_pic_url || 
-                           post.user_profile_pic || 
-                           post.profile_pic || 
-                           post.avatar || 
-                           null,
-          // Incluir el objeto de usuario completo para acceder a más información
-          user: userData
-        };
+      // Asegurarse de que los posts tengan los campos requeridos
+      const formattedPosts = posts.map((post: any) => ({
+        _id: post._id || post.id || Math.random().toString(36).substr(2, 9),
+        user_id: post.user_id || post.userId || 'unknown',
+        username: post.username || post.user?.username || 'Usuario',
+        content: post.content || '',
+        created_at: post.created_at || post.createdAt || new Date().toISOString(),
+        likes_count: post.likes_count || post.likesCount || 0,
+        comments_count: post.comments_count || post.commentsCount || 0,
+        user_profile_pic: post.user_profile_pic || post.user?.profile_pic_url || ''
       }));
+      
+      console.log('Posts formateados:', formattedPosts);
       
       return {
         success: true,
@@ -194,11 +162,21 @@ const postService = {
         message: 'Feed obtenido correctamente'
       };
     } catch (error: any) {
-      console.error('Error al obtener feed:', error);
+      console.error('Error detallado al obtener feed:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers
+        }
+      });
+      
       return {
         success: false,
-        error: error.message || 'Error al obtener feed',
-        message: 'Error al obtener feed'
+        error: error.response?.data?.message || error.message || 'Error al obtener el feed',
+        message: 'Error al obtener el feed'
       };
     }
   },
@@ -206,7 +184,6 @@ const postService = {
   // Crear una nueva publicación con soporte para imágenes
   createPost: async (postData: CreatePostData, files?: File[]): Promise<ApiResponse<Post>> => {
     try {
-      // Obtener el token usando la función importada
       const token = getToken();
       
       if (!token) {
@@ -218,31 +195,28 @@ const postService = {
         };
       }
       
-      // Si hay archivos, subirlos primero
-      let media_urls: string[] = [];
-      
+      const formData = new FormData();
+      formData.append('content', postData.content);
+
+      // Si hay archivos, añadirlos al FormData con la clave 'image'
       if (files && files.length > 0) {
-        // Subir cada imagen y obtener sus URLs
-        const uploadPromises = files.map(file => uploadImage(file));
-        media_urls = await Promise.all(uploadPromises);
+        files.forEach(file => {
+          formData.append('image', file);
+        });
       }
-      
-      // Añadir las URLs de las imágenes a los datos del post
-      const postWithMedia = {
-        ...postData,
-        media_urls: [...(postData.media_urls || []), ...media_urls]
-      };
-      
-      // Configurar headers con el token
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      };
-      
-      // Crear el post con las imágenes
-      const response = await axios.post(`${API_URL}/api/posts/`, postWithMedia, config);
+
+      // Si hay media_urls pre-existentes, podrías querer enviarlas también, 
+      // pero el backend actual parece esperar archivos. Si necesitas enviar URLs, 
+      // tendrías que ajustar el backend o cómo se manejan aquí.
+      // if (postData.media_urls) {
+      //   postData.media_urls.forEach(url => {
+      //     formData.append('media_urls', url);
+      //   });
+      // }
+
+      // Usar apiClient para enviar FormData. No necesitamos configurar 'Content-Type'
+      // manualmente para FormData, axios lo hace automáticamente.
+      const response = await apiClient.post('/api/posts/', formData);
       
       return {
         success: true,
@@ -252,11 +226,12 @@ const postService = {
     } catch (error: any) {
       console.error('Error al crear publicación:', error);
       
-      // Mensaje de error más detallado
       let errorMessage = 'Error al crear publicación';
       if (error.response) {
         if (error.response.status === 401) {
           errorMessage = 'No estás autorizado para crear publicaciones. Por favor, inicia sesión nuevamente.';
+        } else if (error.response.status === 400) {
+           errorMessage = error.response.data?.message || 'Solicitud incorrecta. Verifica los datos enviados.';
         } else {
           errorMessage = error.response.data?.message || errorMessage;
         }
