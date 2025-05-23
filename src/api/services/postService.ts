@@ -198,25 +198,21 @@ const postService = {
       const formData = new FormData();
       formData.append('content', postData.content);
 
-      // Si hay archivos, añadirlos al FormData con la clave 'image'
       if (files && files.length > 0) {
         files.forEach(file => {
           formData.append('image', file);
         });
       }
 
-      // Si hay media_urls pre-existentes, podrías querer enviarlas también, 
-      // pero el backend actual parece esperar archivos. Si necesitas enviar URLs, 
-      // tendrías que ajustar el backend o cómo se manejan aquí.
-      // if (postData.media_urls) {
-      //   postData.media_urls.forEach(url => {
-      //     formData.append('media_urls', url);
-      //   });
-      // }
+      // Agregar configuración específica para FormData
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        }
+      };
 
-      // Usar apiClient para enviar FormData. No necesitamos configurar 'Content-Type'
-      // manualmente para FormData, axios lo hace automáticamente.
-      const response = await apiClient.post('/api/posts/', formData);
+      const response = await apiClient.post('/api/posts/', formData, config);
       
       return {
         success: true,
