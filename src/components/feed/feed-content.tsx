@@ -14,7 +14,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription, // Importar DialogDescription
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input"; // Importar Input para la selección de archivos
 
 interface Post {
   _id: string;
@@ -34,7 +36,7 @@ interface Comment {
   post_id: string;
   username: string;
   profile_pic_url: string;
-  text_comment: string;
+  text_comment: string; // Aseguramos que sea string
   created_at: string;
 }
 
@@ -48,7 +50,7 @@ export function FeedContent() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  
+
   // Estados para el modal de comentarios
   const [commentsModalOpen, setCommentsModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -66,67 +68,51 @@ export function FeedContent() {
       } else {
         setRefreshing(true);
       }
-      
+
       setError(null); // Limpiar errores previos
-      
+
       console.log('Iniciando carga de publicaciones...');
       const response = await postService.getFeed();
       console.log('Respuesta de getFeed:', response);
-      
+
       if (response.success && response.data) {
-        // Verificar si response.data es un array
         let postsData = response.data;
-        
-        // Si no es un array, intentar extraer los posts
+
         if (!Array.isArray(postsData) && typeof postsData === 'object') {
           postsData = Object.values(postsData);
         }
-        
+
         if (!Array.isArray(postsData)) {
           console.error('Formato de datos inesperado:', postsData);
           throw new Error('Formato de datos inesperado al cargar publicaciones');
         }
-        
-        // Ordenar posts por fecha (más recientes primero)
+
         const sortedPosts = [...postsData]
           .map(post => ({
             ...post,
-            // Asegurar que las fechas estén en formato correcto
             created_at: post.created_at || new Date().toISOString(),
-            // Inicializar liked_by_me como false por defecto
             liked_by_me: post.liked_by_me || false
           }))
-          .sort((a, b) => 
+          .sort((a, b) =>
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
           );
-        
-        // Si el usuario está autenticado, verificar qué posts ha dado like
+
+        // Fetch like status for each post if authenticated
         if (isAuthenticated && user) {
-          // Actualizar los posts con la información de like
-          setPosts(sortedPosts);
-          
-          // Cargar el estado de like para cada post (esto podría ser una carga pesada)
-          // Idealmente, el backend debería devolver esta información directamente
-          for (const post of sortedPosts) {
+          const postsWithLikeStatus = await Promise.all(sortedPosts.map(async (post) => {
             try {
               const likeStatus = await postService.checkLikeStatus(post._id);
-              if (likeStatus.success && likeStatus.data) {
-                setPosts(prevPosts => 
-                  prevPosts.map(p => 
-                    p._id === post._id 
-                      ? { ...p, liked_by_me: likeStatus.data.liked } 
-                      : p
-                  )
-                );
-              }
+              return { ...post, liked_by_me: likeStatus.success && likeStatus.data ? likeStatus.data.liked : false };
             } catch (err) {
               console.error(`Error al verificar like para post ${post._id}:`, err);
+              return { ...post, liked_by_me: false }; // Default to false on error
             }
-          }
+          }));
+          setPosts(postsWithLikeStatus);
         } else {
           setPosts(sortedPosts);
         }
-        
+
         setError(null);
         setLastRefresh(new Date());
       } else {
@@ -139,11 +125,10 @@ export function FeedContent() {
         stack: err.stack,
         response: err.response?.data
       });
-      
+
       const errorMessage = err.response?.data?.message || err.message || "Error al cargar las publicaciones";
       setError(errorMessage);
-      
-      // Mostrar mensaje más descriptivo en consola
+
       if (err.response) {
         console.error('Error del servidor:', {
           status: err.response.status,
@@ -151,7 +136,7 @@ export function FeedContent() {
           data: err.response.data
         });
       }
-      
+
       // Datos de prueba como fallback solo si no hay posts y estamos en desarrollo
       if (posts.length === 0 && import.meta.env.DEV) {
         console.warn('Usando datos de prueba como fallback');
@@ -177,7 +162,7 @@ export function FeedContent() {
             user_profile_pic: "https://i.pravatar.cc/150?img=2"
           }
         ];
-        
+
         setPosts(mockPosts);
       }
     } finally {
@@ -190,17 +175,17 @@ export function FeedContent() {
   useEffect(() => {
     console.log("Estado de autenticación:", { isAuthenticated, user });
     fetchPosts();
-  }, []);
+  }, [isAuthenticated, user]); // Dependencias añadidas
 
   // Actualizar periódicamente (cada 30 segundos) solo si el usuario está autenticado
   useEffect(() => {
     if (!isAuthenticated) return;
-    
+
     const intervalId = setInterval(() => {
       console.log("Actualizando feed automáticamente...");
       fetchPosts(false);
     }, 30000); // 30 segundos
-    
+
     return () => clearInterval(intervalId);
   }, [isAuthenticated]);
 
@@ -209,54 +194,53 @@ export function FeedContent() {
     fetchPosts(false);
   };
 
+  // Manejar selección de archivos
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      setSelectedFiles(Array.from(event.target.files));
+    }
+  };
+
   // Crear nueva publicación
   const handleCreatePost = async () => {
-    if (!newPostContent.trim()) return;
+    if (!newPostContent.trim() && selectedFiles.length === 0) return; // Permitir post solo con archivos
 
     try {
       setIsSubmitting(true);
       setError(null); // Limpiar errores anteriores
 
-      console.log("Intentando crear post con contenido:", newPostContent);
+      console.log("Intentando crear post con contenido:", newPostContent, "y archivos:", selectedFiles.length);
 
-      // Guardar el contenido antes de limpiarlo
       const contentToPost = newPostContent;
-
-      // Limpiar el campo de texto inmediatamente para mejor UX
       setNewPostContent("");
 
-      // Modificar esta línea para incluir los archivos seleccionados
       const response = await postService.createPost(
         { content: contentToPost },
-        selectedFiles // Pass the selected files here
+        selectedFiles
       );
 
       console.log("Respuesta del servidor:", response);
 
       if (response.success) {
-        // Limpiar los archivos seleccionados después de una creación exitosa
         setSelectedFiles([]);
 
-        // Crear un nuevo post temporal para mostrar inmediatamente
         if (response.data) {
           const newPost: Post = {
             _id: response.data._id || Date.now().toString(),
             user_id: user?._id || 'temp-user-id',
             username: user?.username || 'Usuario',
             content: contentToPost,
+            media_urls: response.data.media_urls, // Incluir URLs de medios de la respuesta
             created_at: new Date().toISOString(),
             likes_count: 0,
             comments_count: 0,
             user_profile_pic: user?.profile_pic_url || ''
           };
 
-          // Añadir el nuevo post al principio del feed
           setPosts(prevPosts => [newPost, ...prevPosts]);
-
           console.log("Post añadido temporalmente al feed");
         }
 
-        // Actualizar el feed completo después de un breve retraso
         setTimeout(() => {
           fetchPosts(false);
         }, 1000);
@@ -269,7 +253,6 @@ export function FeedContent() {
     } catch (err: any) {
       console.error("Error detallado al crear publicación:", err);
 
-      // Mostrar mensaje de error más específico
       if (err.response) {
         console.error("Detalles de la respuesta:", err.response.data);
         setError(`Error (${err.response.status}): ${err.response.data?.message || err.message || "Error al crear la publicación"}`);
@@ -286,7 +269,7 @@ export function FeedContent() {
   // Formatear fecha
   const formatDate = (dateString: string) => {
     try {
-      return formatDistanceToNow(new Date(dateString), { 
+      return formatDistanceToNow(new Date(dateString), {
         addSuffix: true,
         locale: es
       });
@@ -301,16 +284,25 @@ export function FeedContent() {
     setCommentsModalOpen(true);
     setLoadingComments(true);
     setComments([]);
-    
+
     try {
       const response = await postService.getComments(post._id);
       if (response.success && response.data) {
-        setComments(response.data);
+        // Asegurarse de que text_comment sea string
+        const formattedComments = response.data.map((comment: any) => ({
+          ...comment,
+          text_comment: typeof comment.text_comment === 'object' && comment.text_comment !== null
+            ? comment.text_comment.text_comment // Acceder a la propiedad correcta si es un objeto
+            : String(comment.text_comment) // Convertir a string si no es un objeto o es null/undefined
+        }));
+        setComments(formattedComments);
       } else {
         console.error('Error al cargar comentarios:', response.error);
+        setComments([]); // Limpiar comentarios en caso de error
       }
     } catch (err) {
       console.error('Error al cargar comentarios:', err);
+      setComments([]); // Limpiar comentarios en caso de error
     } finally {
       setLoadingComments(false);
     }
@@ -319,26 +311,32 @@ export function FeedContent() {
   // Función para enviar un nuevo comentario
   const handleSubmitComment = async () => {
     if (!selectedPost || !newComment.trim() || !isAuthenticated) return;
-    
+
     setSubmittingComment(true);
     try {
       const response = await postService.createComment(selectedPost._id, newComment);
       if (response.success && response.data) {
-        // Añadir el nuevo comentario a la lista
-        setComments(prev => [response.data, ...prev]);
+        // Añadir el nuevo comentario a la lista, asegurando el formato
+        const newAddedComment: Comment = {
+          ...response.data,
+          text_comment: typeof response.data.text_comment === 'object' && response.data.text_comment !== null
+            ? response.data.text_comment.text_comment
+            : String(response.data.text_comment)
+        };
+        setComments(prev => [newAddedComment, ...prev]);
         setNewComment("");
-        
+
         // Actualizar el contador de comentarios en el post
-        setPosts(prevPosts => 
-          prevPosts.map(post => 
-            post._id === selectedPost._id 
+        setPosts(prevPosts =>
+          prevPosts.map(post =>
+            post._id === selectedPost._id
               ? { ...post, comments_count: (post.comments_count || 0) + 1 }
               : post
           )
         );
-        
-        // Actualizar el post seleccionado
-        setSelectedPost(prev => 
+
+        // Actualizar el post seleccionado en el estado local del modal
+        setSelectedPost(prev =>
           prev ? { ...prev, comments_count: (prev.comments_count || 0) + 1 } : null
         );
       } else {
@@ -354,89 +352,64 @@ export function FeedContent() {
   // Función para dar like o dislike a una publicación
   const handleLikePost = async (postId: string) => {
     if (!isAuthenticated) return;
-    
-    // Si ya estamos procesando un like para este post, no hacemos nada
+
     if (likingPost === postId) return;
-    
+
     setLikingPost(postId);
     try {
-      // Encontrar el post actual para saber si ya tiene like
       const currentPost = posts.find(post => post._id === postId);
       if (!currentPost) return;
-      
-      // Si ya tiene like, hacemos dislike, si no, hacemos like
-      const response = currentPost.liked_by_me 
+
+      const response = currentPost.liked_by_me
         ? await postService.dislikePost(postId)
         : await postService.likePost(postId);
-      
+
       if (response.success) {
-        // Actualizar el contador de likes en el post
-        setPosts(prevPosts => 
-          prevPosts.map(post => 
-            post._id === postId 
-              ? { 
-                  ...post, 
-                  // Si ya tenía like, restamos 1, si no, sumamos 1
-                  likes_count: post.liked_by_me 
-                    ? Math.max(0, (post.likes_count || 0) - 1) 
-                    : (post.likes_count || 0) + 1,
-                  // Invertimos el estado de liked_by_me
-                  liked_by_me: !post.liked_by_me 
+        setPosts(prevPosts =>
+          prevPosts.map(post =>
+            post._id === postId
+              ? {
+                  ...post,
+                  likes_count:
+                    post.liked_by_me
+                      ? Math.max(0, (post.likes_count || 0) - 1)
+                      : (post.likes_count || 0) + 1,
+                  liked_by_me: !post.liked_by_me,
                 }
               : post
           )
         );
-        
+
         // Actualizar el post seleccionado si es el mismo
-        if (selectedPost && selectedPost._id === postId) {
-          setSelectedPost(prev => {
-            if (!prev) return null;
-            return { 
-              ...prev, 
-              // Si ya tenía like, restamos 1, si no, sumamos 1
-              likes_count: prev.liked_by_me 
-                ? Math.max(0, (prev.likes_count || 0) - 1) 
-                : (prev.likes_count || 0) + 1,
-              // Invertimos el estado de liked_by_me
-              liked_by_me: !prev.liked_by_me 
-            };
-          });
-        }
+        setSelectedPost(prev =>
+          prev && prev._id === postId
+            ? {
+                ...prev,
+                likes_count:
+                  prev.liked_by_me
+                    ? Math.max(0, (prev.likes_count || 0) - 1)
+                    : (prev.likes_count || 0) + 1,
+                liked_by_me: !prev.liked_by_me,
+              }
+            : prev
+        );
       } else {
-        // Mostrar mensaje de error si es necesario
-        console.error('Error al procesar like/dislike:', response.error);
-        // Opcionalmente, mostrar un toast o alerta al usuario
+        console.error('Error al dar like/dislike:', response.error);
       }
     } catch (err) {
-      console.error('Error al procesar like/dislike:', err);
+      console.error('Error al dar like/dislike:', err);
     } finally {
       setLikingPost(null);
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Botón de actualización manual */}
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-muted-foreground">
-          Última actualización: {formatDate(lastRefresh.toISOString())}
-        </p>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className={refreshing ? "animate-spin" : ""}
-        >
-          <RefreshCw size={16} />
-        </Button>
-      </div>
-
-      {/* Área para crear nueva publicación */}
+    <div className="container mx-auto p-4">
+      {/* Sección para crear nueva publicación */}
       {isAuthenticated && (
-        <Card>
+        <Card className="mb-6">
           <CardHeader>
-            <h2 className="text-lg font-semibold">Crear nueva publicación</h2>
+            <h2 className="text-xl font-semibold">Crear nueva publicación</h2>
           </CardHeader>
           <CardContent>
             <Textarea
@@ -444,177 +417,206 @@ export function FeedContent() {
               value={newPostContent}
               onChange={(e) => setNewPostContent(e.target.value)}
               rows={4}
-              disabled={isSubmitting}
+              className="mb-4"
             />
             {/* Input para seleccionar archivos */}
-            <input 
-              type="file" 
-              multiple 
-              onChange={(e) => setSelectedFiles(Array.from(e.target.files || []))} // Add this line to handle file selection
-              className="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-              disabled={isSubmitting}
+            <Input
+              type="file"
+              multiple
+              onChange={handleFileSelect}
+              className="mb-4"
             />
-             {/* Mostrar nombres de archivos seleccionados */}
-             {selectedFiles.length > 0 && (
-                <div className="mt-2 text-sm text-gray-600">
-                    Archivos seleccionados: {selectedFiles.map(file => file.name).join(', ')}
-                </div>
+            {selectedFiles.length > 0 && (
+              <div className="mb-4 text-sm text-gray-600">
+                Archivos seleccionados: {selectedFiles.map(file => file.name).join(', ')}
+              </div>
             )}
           </CardContent>
           <CardFooter className="flex justify-end">
-            <Button onClick={handleCreatePost} disabled={!newPostContent.trim() || isSubmitting}>
+            <Button
+              onClick={handleCreatePost}
+              disabled={isSubmitting || (!newPostContent.trim() && selectedFiles.length === 0)}
+            >
               {isSubmitting ? "Publicando..." : "Publicar"}
             </Button>
           </CardFooter>
         </Card>
       )}
 
-      {/* Mostrar mensaje de error si existe */}
+      {/* Botón de refrescar */}
+      <div className="flex justify-between items-center mb-4">
+        <Button onClick={handleRefresh} disabled={refreshing} variant="outline">
+          <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? 'Actualizando...' : 'Actualizar Feed'}
+        </Button>
+        <span className="text-sm text-gray-500">
+          Última actualización: {formatDate(lastRefresh.toISOString())}
+        </span>
+      </div>
+
+      {/* Mostrar errores */}
       {error && (
-        <div className="text-red-500 text-center py-4">{error}</div>
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <strong className="font-bold">Error:</strong>
+          <span className="block sm:inline"> {error}</span>
+        </div>
       )}
 
-      {/* Mostrar indicador de carga o publicaciones */}
+      {/* Mostrar publicaciones */}
       {loading ? (
-        <div className="text-center py-8">Cargando publicaciones...</div>
-      ) : posts.length > 0 ? (
-        posts.map((post) => (
-          <Card key={post._id}>
-            <CardHeader className="flex flex-row items-center gap-3">
-              <Avatar>
-                <AvatarImage src={post.user_profile_pic || "https://i.pravatar.cc/150"} />
-                <AvatarFallback>{post.username?.charAt(0) || '?'}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-semibold">{post.username || 'Usuario Desconocido'}</p>
-                <p className="text-sm text-muted-foreground">{formatDate(post.created_at)}</p>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p>{post.content}</p>
-              {post.media_urls && post.media_urls.length > 0 && (
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {post.media_urls.map((url, index) => (
-                    <img 
-                      key={index} 
-                      src={url} 
-                      alt={`Media ${index + 1}`} 
-                      className="rounded-md object-cover w-full h-48"
-                    />
-                  ))}
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <div className="flex items-center gap-4">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className={`flex items-center gap-1 ${post.liked_by_me ? 'text-red-500' : ''}`}
-                  onClick={() => handleLikePost(post._id)}
-                  disabled={likingPost === post._id}
-                >
-                  <Heart size={16} className={post.liked_by_me ? 'fill-current' : ''} /> 
-                  {post.likes_count || 0}
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="flex items-center gap-1"
-                  onClick={() => handleOpenComments(post)}
-                >
-                  <MessageSquare size={16} /> {post.comments_count || 0}
-                </Button>
-              </div>
-            </CardFooter>
-          </Card>
-        ))
+        <p>Cargando publicaciones...</p>
+      ) : posts.length === 0 ? (
+        <p>No hay publicaciones disponibles.</p>
       ) : (
-        <div className="text-center py-8 text-muted-foreground">No hay publicaciones disponibles.</div>
-      )}
-      
-      {/* Modal de comentarios */}
-      <Dialog open={commentsModalOpen} onOpenChange={setCommentsModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          {selectedPost && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Comentarios</DialogTitle>
-              </DialogHeader>
-              
-              {/* Mostrar la publicación */}
-              <div className="border-b pb-4 mb-4">
-                <div className="flex items-center gap-3 mb-2">
+        <div className="space-y-6">
+          {posts.map((post) => (
+            <Card key={post._id}>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className="flex items-center space-x-4">
                   <Avatar>
-                    <AvatarImage src={selectedPost.user_profile_pic || "https://i.pravatar.cc/150"} />
-                    <AvatarFallback>{selectedPost.username?.charAt(0) || '?'}</AvatarFallback>
+                    <AvatarImage src={post.user_profile_pic || "https://i.pravatar.cc/150"} alt={post.username} />
+                    <AvatarFallback>{post.username?.charAt(0) || '?'}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-semibold">{selectedPost.username || 'Usuario Desconocido'}</p>
-                    <p className="text-sm text-muted-foreground">{formatDate(selectedPost.created_at)}</p>
+                    <p className="font-semibold">{post.username || 'Usuario Desconocido'}</p>
+                    <p className="text-sm text-gray-500">{formatDate(post.created_at)}</p>
                   </div>
                 </div>
-                <p>{selectedPost.content}</p>
-                
-                {/* Mostrar contadores en el modal también */}
-                <div className="flex items-center gap-4 mt-3">
-                  <div className="flex items-center gap-1">
-                    <Heart size={14} className={selectedPost.liked_by_me ? 'fill-current text-red-500' : ''} /> 
-                    <span className="text-sm">{selectedPost.likes_count || 0} likes</span>
+                {/* Opciones de post (ej: eliminar, editar) - Opcional */}
+              </CardHeader>
+              <CardContent>
+                <p>{post.content}</p>
+                {/* Mostrar imágenes/videos si existen */}
+                {post.media_urls && post.media_urls.length > 0 && (
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {post.media_urls.map((url, index) => (
+                      <img key={index} src={url} alt={`Media ${index + 1}`} className="rounded-md object-cover w-full h-48" />
+                    ))}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <MessageSquare size={14} /> 
-                    <span className="text-sm">{selectedPost.comments_count || 0} comentarios</span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Formulario para añadir comentario */}
-              {isAuthenticated && (
-                <div className="flex gap-2 mb-4">
-                  <Textarea 
-                    placeholder="Escribe un comentario..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    className="min-h-[60px]"
-                    disabled={submittingComment}
-                  />
-                  <Button 
-                    onClick={handleSubmitComment} 
-                    disabled={!newComment.trim() || submittingComment}
-                    className="self-end"
-                  >
-                    {submittingComment ? "Enviando..." : "Comentar"}
-                  </Button>
-                </div>
-              )}
-              
-              {/* Lista de comentarios */}
-              <div className="max-h-[300px] overflow-y-auto space-y-4">
-                {loadingComments ? (
-                  <div className="text-center py-4">Cargando comentarios...</div>
-                ) : comments.length > 0 ? (
-                  comments.map((comment) => (
-                    <div key={comment._id} className="flex gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={comment.profile_pic_url || "https://i.pravatar.cc/150"} />
-                        <AvatarFallback>{comment.username?.charAt(0) || '?'}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <p className="font-semibold text-sm">{comment.username}</p>
-                          <p className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</p>
-                        </div>
-                        <p className="text-sm">{comment.text_comment}</p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-4 text-muted-foreground">No hay comentarios aún.</div>
                 )}
+              </CardContent>
+              <CardFooter className="flex justify-between items-center">
+                <div className="flex space-x-4">
+                  {/* Botón de Like */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleLikePost(post._id)}
+                    disabled={!isAuthenticated || likingPost === post._id}
+                    className={post.liked_by_me ? "text-red-500" : "text-gray-600"}
+                  >
+                    <Heart className={`mr-1 h-4 w-4 ${post.liked_by_me ? 'fill-current' : ''}`} />
+                    {post.likes_count || 0}
+                  </Button>
+                  {/* Botón de Comentarios */}
+                  <Button variant="ghost" size="sm" onClick={() => handleOpenComments(post)}>
+                    <MessageSquare className="mr-1 h-4 w-4" />
+                    {post.comments_count || 0}
+                  </Button>
+
+                </div>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Modal de Comentarios */}
+      <Dialog open={commentsModalOpen} onOpenChange={setCommentsModalOpen}>
+        <DialogContent className="sm:max-w-[700px] ">
+          <DialogHeader>
+            <DialogTitle>Comentarios</DialogTitle>
+            {/* Añadir DialogDescription para resolver la advertencia */}
+            <DialogDescription>
+              Comentarios de la publicación de {selectedPost?.username || 'Usuario'}.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Contenido del post dentro del modal */}
+          {selectedPost && (
+            <div className="mb-4 border-b pb-4">
+              <div className="flex items-center space-x-4 mb-2">
+                <Avatar>
+                  <AvatarImage src={selectedPost.user_profile_pic || "https://i.pravatar.cc/150"} alt={selectedPost.username} />
+                  <AvatarFallback>{selectedPost.username?.charAt(0) || '?'}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold">{selectedPost.username || 'Usuario Desconocido'}</p>
+                  <p className="text-sm text-gray-500">{formatDate(selectedPost.created_at)}</p>
+                </div>
               </div>
-            </>
+              <p className="text-sm mb-2">{selectedPost.content}</p>
+               {/* Mostrar imágenes/videos del post seleccionado si existen */}
+                {selectedPost.media_urls && selectedPost.media_urls.length > 0 && (
+                  <div className="mt-2 grid grid-cols-1 gap-2">
+                    {selectedPost.media_urls.map((url, index) => (
+                      <img key={index} src={url} alt={`Media ${index + 1}`} className="rounded-md object-cover w-full max-h-40" />
+                    ))}
+                  </div>
+                )}
+              <div className="flex items-center text-sm text-gray-600 mt-2">
+                 <Heart className={`mr-1 h-4 w-4 ${selectedPost.liked_by_me ? 'fill-red-500 text-red-500' : ''}`} />
+                 <span>{selectedPost.likes_count || 0}</span>
+                 <MessageSquare className="ml-4 mr-1 h-4 w-4" />
+                 <span>{selectedPost.comments_count || 0}</span>
+              </div>
+            </div>
           )}
+
+          {/* Formulario para añadir comentario */}
+          {isAuthenticated && selectedPost && (
+            <div className="flex items-start space-x-2 mb-4">
+              <Avatar className="w-8 h-8">
+                <AvatarImage src={user?.profile_pic_url || "https://i.pravatar.cc/150"} alt={user?.username} />
+                <AvatarFallback>{user?.username?.charAt(0) || '?'}</AvatarFallback>
+              </Avatar>
+              <div className="flex-grow">
+                <Textarea
+                  placeholder="Añade un comentario..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  rows={2}
+                  className="mb-2"
+                />
+                <Button
+                  onClick={handleSubmitComment}
+                  disabled={submittingComment || !newComment.trim()}
+                  size="sm"
+                >
+                  {submittingComment ? "Enviando..." : "Comentar"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Lista de comentarios */}
+          <div className="max-h-60 overflow-y-auto bg-fuchsia-950/50 space-y-4 p-2 rounded-md"> {/* Añadido bg-gray-50, p-2 y rounded-md */}
+            {loadingComments ? (
+              <p className="text-center">Cargando comentarios...</p>
+            ) : comments.length === 0 ? (
+              <p className="text-center text-gray-500">Sé el primero en comentar.</p>
+            ) : (
+              comments.map((comment) => (
+                <div key={comment._id} className="flex items-start space-x-2">
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={comment.profile_pic_url || "https://i.pravatar.cc/150"} alt={comment.username} />
+                    <AvatarFallback>{comment.username?.charAt(0) || '?'}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-grow p-2 rounded-md">
+                    <p className="font-semibold text-sm">{comment.username || 'Usuario Desconocido'}</p>
+                    <p className="text-sm">{comment.text_comment}</p>
+                    <p className="text-xs text-gray-500 mt-1">{formatDate(comment.created_at)}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCommentsModalOpen(false)}>
+              Cerrar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

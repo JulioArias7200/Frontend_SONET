@@ -293,10 +293,10 @@ const postService = {
         message: 'Error al obtener publicación'
       };
     }
-  }, // <--- Add this comma here
+  },
   getComments: async (postId: string): Promise<ApiResponse<Comment[]>> => {
     try {
-      const response = await apiClient.get(`/api/posts/${postId}/comments`);
+      const response = await apiClient.get(`/api/posts/${postId}/comment`);
       return {
         success: true,
         data: response.data,
@@ -313,7 +313,22 @@ const postService = {
   },
   createComment: async (postId: string, text: string): Promise<ApiResponse<Comment>> => {
     try {
-      const response = await apiClient.post(`/api/posts/${postId}/comments`, { text_comment: text });
+      const token = getToken();
+      if (!token) {
+        return {
+          success: false,
+          error: 'No hay token de autenticación disponible',
+          message: 'Error: No autenticado'
+        };
+      }
+
+      const userData = await getUserById('me');
+      const response = await apiClient.post(`/api/posts/${postId}/comment`, {
+        username: userData?.username,
+        profile_pic_url: userData?.profile_pic_url,
+        text_comment: text
+      });
+      
       return {
         success: true,
         data: response.data,
@@ -327,8 +342,39 @@ const postService = {
         message: 'Error al crear comentario'
       };
     }
+  },
+
+  // Función para verificar si el usuario actual ha dado like a un post
+  checkLikeStatus: async (postId: string): Promise<ApiResponse<{ isLiked: boolean }>> => {
+    try {
+      const token = getToken();
+      if (!token) {
+        return {
+          success: false,
+          error: 'No hay token de autenticación disponible',
+          message: 'Error: No autenticado'
+        };
+      }
+      // Asumiendo que el backend tiene un endpoint GET para verificar el estado del like
+      const response = await apiClient.get(`/api/posts/${postId}/likeStatus`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      return {
+        success: true,
+        data: response.data,
+        message: 'Estado del like obtenido correctamente'
+      };
+    } catch (error: any) {
+      console.error('Error al verificar like:', error);
+      return {
+        success: false,
+        error: error.message || 'Error al verificar like',
+        message: 'Error al verificar like'
+      };
+    }
   }
-  
 };
 
 export default postService;
