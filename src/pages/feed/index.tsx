@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Sidebar } from "./components/Sidebar";
-import { FeedContent } from "@/components/feed/feed-content";
+import { FeedContent } from "@/pages/feed/components/feed-content";
 import { RightPanel } from "./components/RightPanel";
 import Squares from '@/components/ui/Squares';
   

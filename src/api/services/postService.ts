@@ -65,7 +65,7 @@ const uploadImage = async (file: File): Promise<string> => {
   }
 };
 
-const postService = {
+export const postService = {
   // Obtener todas las publicaciones
   getAllPosts: async (): Promise<ApiResponse<Post[]>> => {
     try {
@@ -355,7 +355,6 @@ const postService = {
           message: 'Error: No autenticado'
         };
       }
-      // Asumiendo que el backend tiene un endpoint GET para verificar el estado del like
       const response = await apiClient.get(`/api/posts/${postId}/likeStatus`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -372,6 +371,82 @@ const postService = {
         success: false,
         error: error.message || 'Error al verificar like',
         message: 'Error al verificar like'
+      };
+    }
+  },
+
+  likePost: async (postId: string): Promise<ApiResponse<Post>> => {
+    try {
+      const token = getToken();
+      if (!token) {
+        return {
+          success: false,
+          error: 'No hay token de autenticación disponible',
+          message: 'Error: No autenticado'
+        };
+      }
+      const response = await apiClient.post(`/api/posts/${postId}/like`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      console.log('Respuesta del servidor (like):', response.data);
+      
+      // Aceptar la respuesta si tiene datos, sin validación estricta
+      if (response.data) {
+        return {
+          success: true,
+          data: response.data,
+          message: 'Post liked successfully'
+        };
+      }
+      
+      throw new Error('No se recibieron datos del servidor');
+    } catch (error: any) {
+      console.error('Error liking post:', error);
+      return {
+        success: false,
+        error: error.message || 'Error liking post',
+        message: 'Error liking post'
+      };
+    }
+  },
+
+  dislikePost: async (postId: string): Promise<ApiResponse<Post>> => {
+    try {
+      const token = getToken();
+      if (!token) {
+        return {
+          success: false,
+          error: 'No hay token de autenticación disponible',
+          message: 'Error: No autenticado'
+        };
+      }
+      const response = await apiClient.post(`/api/posts/${postId}/dislike`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      console.log('Respuesta del servidor (dislike):', response.data);
+      
+      // Aceptar la respuesta si tiene datos, sin validación estricta
+      if (response.data) {
+        return {
+          success: true,
+          data: response.data,
+          message: 'Post disliked successfully'
+        };
+      }
+      
+      throw new Error('No se recibieron datos del servidor');
+    } catch (error: any) {
+      console.error('Error disliking post:', error);
+      return {
+        success: false,
+        error: error.message || 'Error disliking post',
+        message: 'Error disliking post'
       };
     }
   }
