@@ -4,10 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageSquare, Heart, Share2, RefreshCw } from "lucide-react";
+import { MessageSquare, Heart, Share2, RefreshCw, X } from "lucide-react";
 import postService from "@/api/services/postService";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface Post {
   _id: string;
@@ -19,6 +26,16 @@ interface Post {
   likes_count?: number;
   comments_count?: number;
   user_profile_pic?: string;
+  liked_by_me?: boolean; // Añadimos esta propiedad para saber si el usuario actual ha dado like
+}
+
+interface Comment {
+  _id: string;
+  post_id: string;
+  username: string;
+  profile_pic_url: string;
+  text_comment: string;
+  created_at: string;
 }
 
 export function FeedContent() {
@@ -30,7 +47,16 @@ export function FeedContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]); // Add this line
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  
+  // Estados para el modal de comentarios
+  const [commentsModalOpen, setCommentsModalOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [likingPost, setLikingPost] = useState<string | null>(null); // ID del post que está recibiendo like
 
   // Función para cargar publicaciones
   const fetchPosts = async (showLoading = true) => {
@@ -66,14 +92,41 @@ export function FeedContent() {
           .map(post => ({
             ...post,
             // Asegurar que las fechas estén en formato correcto
-            created_at: post.created_at || new Date().toISOString()
+            created_at: post.created_at || new Date().toISOString(),
+            // Inicializar liked_by_me como false por defecto
+            liked_by_me: post.liked_by_me || false
           }))
           .sort((a, b) => 
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
           );
         
-        console.log('Publicaciones ordenadas:', sortedPosts);
-        setPosts(sortedPosts);
+        // Si el usuario está autenticado, verificar qué posts ha dado like
+        if (isAuthenticated && user) {
+          // Actualizar los posts con la información de like
+          setPosts(sortedPosts);
+          
+          // Cargar el estado de like para cada post (esto podría ser una carga pesada)
+          // Idealmente, el backend debería devolver esta información directamente
+          for (const post of sortedPosts) {
+            try {
+              const likeStatus = await postService.checkLikeStatus(post._id);
+              if (likeStatus.success && likeStatus.data) {
+                setPosts(prevPosts => 
+                  prevPosts.map(p => 
+                    p._id === post._id 
+                      ? { ...p, liked_by_me: likeStatus.data.liked } 
+                      : p
+                  )
+                );
+              }
+            } catch (err) {
+              console.error(`Error al verificar like para post ${post._id}:`, err);
+            }
+          }
+        } else {
+          setPosts(sortedPosts);
+        }
+        
         setError(null);
         setLastRefresh(new Date());
       } else {
@@ -242,6 +295,125 @@ export function FeedContent() {
     }
   };
 
+  // Función para abrir el modal de comentarios
+  const handleOpenComments = async (post: Post) => {
+    setSelectedPost(post);
+    setCommentsModalOpen(true);
+    setLoadingComments(true);
+    setComments([]);
+    
+    try {
+      const response = await postService.getComments(post._id);
+      if (response.success && response.data) {
+        setComments(response.data);
+      } else {
+        console.error('Error al cargar comentarios:', response.error);
+      }
+    } catch (err) {
+      console.error('Error al cargar comentarios:', err);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  // Función para enviar un nuevo comentario
+  const handleSubmitComment = async () => {
+    if (!selectedPost || !newComment.trim() || !isAuthenticated) return;
+    
+    setSubmittingComment(true);
+    try {
+      const response = await postService.createComment(selectedPost._id, newComment);
+      if (response.success && response.data) {
+        // Añadir el nuevo comentario a la lista
+        setComments(prev => [response.data, ...prev]);
+        setNewComment("");
+        
+        // Actualizar el contador de comentarios en el post
+        setPosts(prevPosts => 
+          prevPosts.map(post => 
+            post._id === selectedPost._id 
+              ? { ...post, comments_count: (post.comments_count || 0) + 1 }
+              : post
+          )
+        );
+        
+        // Actualizar el post seleccionado
+        setSelectedPost(prev => 
+          prev ? { ...prev, comments_count: (prev.comments_count || 0) + 1 } : null
+        );
+      } else {
+        console.error('Error al crear comentario:', response.error);
+      }
+    } catch (err) {
+      console.error('Error al crear comentario:', err);
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
+  // Función para dar like o dislike a una publicación
+  const handleLikePost = async (postId: string) => {
+    if (!isAuthenticated) return;
+    
+    // Si ya estamos procesando un like para este post, no hacemos nada
+    if (likingPost === postId) return;
+    
+    setLikingPost(postId);
+    try {
+      // Encontrar el post actual para saber si ya tiene like
+      const currentPost = posts.find(post => post._id === postId);
+      if (!currentPost) return;
+      
+      // Si ya tiene like, hacemos dislike, si no, hacemos like
+      const response = currentPost.liked_by_me 
+        ? await postService.dislikePost(postId)
+        : await postService.likePost(postId);
+      
+      if (response.success) {
+        // Actualizar el contador de likes en el post
+        setPosts(prevPosts => 
+          prevPosts.map(post => 
+            post._id === postId 
+              ? { 
+                  ...post, 
+                  // Si ya tenía like, restamos 1, si no, sumamos 1
+                  likes_count: post.liked_by_me 
+                    ? Math.max(0, (post.likes_count || 0) - 1) 
+                    : (post.likes_count || 0) + 1,
+                  // Invertimos el estado de liked_by_me
+                  liked_by_me: !post.liked_by_me 
+                }
+              : post
+          )
+        );
+        
+        // Actualizar el post seleccionado si es el mismo
+        if (selectedPost && selectedPost._id === postId) {
+          setSelectedPost(prev => {
+            if (!prev) return null;
+            return { 
+              ...prev, 
+              // Si ya tenía like, restamos 1, si no, sumamos 1
+              likes_count: prev.liked_by_me 
+                ? Math.max(0, (prev.likes_count || 0) - 1) 
+                : (prev.likes_count || 0) + 1,
+              // Invertimos el estado de liked_by_me
+              liked_by_me: !prev.liked_by_me 
+            };
+          });
+        }
+      } else {
+        // Mostrar mensaje de error si es necesario
+        console.error('Error al procesar like/dislike:', response.error);
+        // Opcionalmente, mostrar un toast o alerta al usuario
+      }
+    } catch (err) {
+      console.error('Error al procesar like/dislike:', err);
+    } finally {
+      setLikingPost(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Botón de actualización manual */}
@@ -335,22 +507,116 @@ export function FeedContent() {
             </CardContent>
             <CardFooter className="flex justify-between">
               <div className="flex items-center gap-4">
-                <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                  <Heart size={16} /> {post.likes_count || 0}
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={`flex items-center gap-1 ${post.liked_by_me ? 'text-red-500' : ''}`}
+                  onClick={() => handleLikePost(post._id)}
+                  disabled={likingPost === post._id}
+                >
+                  <Heart size={16} className={post.liked_by_me ? 'fill-current' : ''} /> 
+                  {post.likes_count || 0}
                 </Button>
-                <Button variant="ghost" size="sm" className="flex items-center gap-1">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="flex items-center gap-1"
+                  onClick={() => handleOpenComments(post)}
+                >
                   <MessageSquare size={16} /> {post.comments_count || 0}
                 </Button>
               </div>
-              <Button variant="ghost" size="sm">
-                <Share2 size={16} />
-              </Button>
             </CardFooter>
           </Card>
         ))
       ) : (
         <div className="text-center py-8 text-muted-foreground">No hay publicaciones disponibles.</div>
       )}
+      
+      {/* Modal de comentarios */}
+      <Dialog open={commentsModalOpen} onOpenChange={setCommentsModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          {selectedPost && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Comentarios</DialogTitle>
+              </DialogHeader>
+              
+              {/* Mostrar la publicación */}
+              <div className="border-b pb-4 mb-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <Avatar>
+                    <AvatarImage src={selectedPost.user_profile_pic || "https://i.pravatar.cc/150"} />
+                    <AvatarFallback>{selectedPost.username?.charAt(0) || '?'}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-semibold">{selectedPost.username || 'Usuario Desconocido'}</p>
+                    <p className="text-sm text-muted-foreground">{formatDate(selectedPost.created_at)}</p>
+                  </div>
+                </div>
+                <p>{selectedPost.content}</p>
+                
+                {/* Mostrar contadores en el modal también */}
+                <div className="flex items-center gap-4 mt-3">
+                  <div className="flex items-center gap-1">
+                    <Heart size={14} className={selectedPost.liked_by_me ? 'fill-current text-red-500' : ''} /> 
+                    <span className="text-sm">{selectedPost.likes_count || 0} likes</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <MessageSquare size={14} /> 
+                    <span className="text-sm">{selectedPost.comments_count || 0} comentarios</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Formulario para añadir comentario */}
+              {isAuthenticated && (
+                <div className="flex gap-2 mb-4">
+                  <Textarea 
+                    placeholder="Escribe un comentario..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    className="min-h-[60px]"
+                    disabled={submittingComment}
+                  />
+                  <Button 
+                    onClick={handleSubmitComment} 
+                    disabled={!newComment.trim() || submittingComment}
+                    className="self-end"
+                  >
+                    {submittingComment ? "Enviando..." : "Comentar"}
+                  </Button>
+                </div>
+              )}
+              
+              {/* Lista de comentarios */}
+              <div className="max-h-[300px] overflow-y-auto space-y-4">
+                {loadingComments ? (
+                  <div className="text-center py-4">Cargando comentarios...</div>
+                ) : comments.length > 0 ? (
+                  comments.map((comment) => (
+                    <div key={comment._id} className="flex gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={comment.profile_pic_url || "https://i.pravatar.cc/150"} />
+                        <AvatarFallback>{comment.username?.charAt(0) || '?'}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <p className="font-semibold text-sm">{comment.username}</p>
+                          <p className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</p>
+                        </div>
+                        <p className="text-sm">{comment.text_comment}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-muted-foreground">No hay comentarios aún.</div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

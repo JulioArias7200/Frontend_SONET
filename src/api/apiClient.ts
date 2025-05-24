@@ -3,7 +3,7 @@ import { getToken } from '@/utils/tokenStorage';
 
 // Crear una instancia de axios con la URL base
 const apiClient = axios.create({
-  baseURL: 'http://127.0.0.1:2020',
+  baseURL: 'http://127.0.0.1:5000',
   headers: {
     'Content-Type': 'application/json',
   },

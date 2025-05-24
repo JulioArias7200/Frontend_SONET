@@ -2,6 +2,16 @@ import { Post } from '@/types/models';
 import { getToken } from '@/utils/tokenStorage';
 import apiClient from '../apiClient';
 
+// Interfaz para comentarios
+interface Comment {
+  _id: string;
+  post_id: string;
+  username: string;
+  profile_pic_url: string;
+  text_comment: string;
+  created_at: string;
+}
+
 // Interfaz simple para crear posts
 interface CreatePostData {
   content: string;
@@ -283,7 +293,42 @@ const postService = {
         message: 'Error al obtener publicación'
       };
     }
+  }, // <--- Add this comma here
+  getComments: async (postId: string): Promise<ApiResponse<Comment[]>> => {
+    try {
+      const response = await apiClient.get(`/api/posts/${postId}/comments`);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Comentarios obtenidos correctamente'
+      };
+    } catch (error: any) {
+      console.error('Error al obtener comentarios:', error);
+      return {
+        success: false,
+        error: error.message || 'Error al obtener comentarios',
+        message: 'Error al obtener comentarios'
+      };
+    }
+  },
+  createComment: async (postId: string, text: string): Promise<ApiResponse<Comment>> => {
+    try {
+      const response = await apiClient.post(`/api/posts/${postId}/comments`, { text_comment: text });
+      return {
+        success: true,
+        data: response.data,
+        message: 'Comentario creado correctamente'
+      };
+    } catch (error: any) {
+      console.error('Error al crear comentario:', error);
+      return {
+        success: false,
+        error: error.message || 'Error al crear comentario',
+        message: 'Error al crear comentario'
+      };
+    }
   }
+  
 };
 
 export default postService;

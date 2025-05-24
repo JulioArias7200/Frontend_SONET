@@ -1,0 +1,53 @@
+[33mcommit bb499a7188abee49c455bbb71b41dd962e206998[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m
+Author: Julio Arias <jac.dev.7200@gmail.com>
+Date:   Fri May 23 22:33:37 2025 -0400
+
+    modal para mostrar publicacion y los comentarios, like y dislike en la base de datos
+
+[33mcommit 3999138905d097da1fcf9ff8f02b45fb2d124ee5[m
+Author: Julio Arias <jac.dev.7200@gmail.com>
+Date:   Fri May 23 17:51:21 2025 -0400
+
+    posteo en tiempo real
+
+[33mcommit 45f4cb74e36bc714806350def9aac16f3bf3fa2b[m
+Author: Julio Arias <jac.dev.7200@gmail.com>
+Date:   Fri May 23 16:58:18 2025 -0400
+
+    restauracion de vista de posts sin limitacion
+
+[33mcommit 10e0d419342b96b2640b21541e1640daacae70d3[m
+Author: Julio Arias <jac.dev.7200@gmail.com>
+Date:   Thu May 22 22:50:41 2025 -0400
+
+    Obtencion de usuarios, pagina mostrar perfil, editar perfil
+
+[33mcommit 904d6d08dfb51b543cf54a14dc9b46627a264325[m
+Author: Julio Arias <jac.dev.7200@gmail.com>
+Date:   Sat May 17 21:27:52 2025 -0400
+
+    feed con posts y implementado y bg squares
+
+[33mcommit ed5a7a366e73735c8e1ee7f79de09943cfdabe14[m
+Author: Julio Arias <jac.dev.7200@gmail.com>
+Date:   Fri May 16 15:47:25 2025 -0400
+
+    creacion de posts desde frontend
+
+[33mcommit 9ed3cfb515d2462742e069ce81819915cec39f92[m
+Author: Julio Arias <jac.dev.7200@gmail.com>
+Date:   Sun May 11 22:06:04 2025 -0400
+
+    Home finished
+
+[33mcommit a98a7270cf9469f19bd003a33fbf2eb2ef47f4b7[m
+Author: Julio Arias <jac.dev.7200@gmail.com>
+Date:   Sun May 11 15:43:15 2025 -0400
+
+    Background and user login
+
+[33mcommit b8408295d976e63162cc7e78db24b11b9a323752[m
+Author: Julio Arias <jac.dev.7200@gmail.com>
+Date:   Wed May 7 23:59:54 2025 -0400
+
+    primer commit
