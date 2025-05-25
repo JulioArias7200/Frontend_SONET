@@ -314,7 +314,10 @@ export function FeedContent() {
 
     setSubmittingComment(true);
     try {
-      const response = await postService.createComment(selectedPost._id, newComment);
+      const response = await postService.createComment(selectedPost._id, newComment, {
+        username: user?.username || 'Usuario',
+        profile_pic_url: user?.profile_pic_url || ''
+      });
       if (response.success && response.data) {
         // Añadir el nuevo comentario a la lista, asegurando el formato
         const newAddedComment: Comment = {

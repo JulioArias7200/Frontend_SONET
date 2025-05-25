@@ -158,13 +158,14 @@ export const postService = {
       // Asegurarse de que los posts tengan los campos requeridos
       const formattedPosts = posts.map((post: any) => ({
         _id: post._id || post.id || Math.random().toString(36).substr(2, 9),
-        user_id: post.user_id || post.userId || 'unknown',
-        username: post.username || post.user?.username || 'Usuario',
+        user_id: post.user_id || post.userId || post.author?.id || 'unknown',
+        username: post.username || post.author?.username || 'Usuario',
         content: post.content || '',
         created_at: post.created_at || post.createdAt || new Date().toISOString(),
         likes_count: post.likes_count || post.likesCount || 0,
         comments_count: post.comments_count || post.commentsCount || 0,
-        user_profile_pic: post.user_profile_pic || post.user?.profile_pic_url || ''
+        user_profile_pic: post.user_profile_pic || post.author?.profile_pic_url || '',
+        author: post.author // Si quieres mantener el objeto completo
       }));
       
       console.log('Posts formateados:', formattedPosts);
@@ -300,9 +301,18 @@ export const postService = {
   getComments: async (postId: string): Promise<ApiResponse<Comment[]>> => {
     try {
       const response = await apiClient.get(`/api/posts/${postId}/comment`);
+      const formattedComments = response.data.map((comment: any) => ({
+        _id: comment._id || comment.id,
+        post_id: comment.post_id,
+        username: comment.username || comment.author?.username || 'Usuario Desconocido',
+        profile_pic_url: comment.profile_pic_url || comment.author?.profile_pic_url || '',
+        text_comment: comment.text_comment || comment.text || '',
+        created_at: comment.created_at || '',
+        author: comment.author // Si quieres mantener el objeto completo
+      }));
       return {
         success: true,
-        data: response.data,
+        data: formattedComments,
         message: 'Comentarios obtenidos correctamente'
       };
     } catch (error: any) {
@@ -314,7 +324,7 @@ export const postService = {
       };
     }
   },
-  createComment: async (postId: string, text: string): Promise<ApiResponse<Comment>> => {
+  createComment: async (postId: string, text: string, user?: { username: string; profile_pic_url: string }): Promise<ApiResponse<Comment>> => {
     try {
       const token = getToken();
       if (!token) {
@@ -324,14 +334,12 @@ export const postService = {
           message: 'Error: No autenticado'
         };
       }
-
-      const userData = await getUserById('me');
+      // Usa los datos del usuario autenticado que recibes como argumento
       const response = await apiClient.post(`/api/posts/${postId}/comment`, {
-        username: userData?.username,
-        profile_pic_url: userData?.profile_pic_url,
+        username: user?.username,
+        profile_pic_url: user?.profile_pic_url,
         text_comment: text
       });
-      
       return {
         success: true,
         data: response.data,
