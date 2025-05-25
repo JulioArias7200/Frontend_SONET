@@ -42,9 +42,13 @@ const authService = {
   },
 
   // Registrar usuario
-  signup: async (data: SignupData): Promise<ApiResponse<AuthResponse>> => {
+  signup: async (data: FormData): Promise<ApiResponse<AuthResponse>> => {
     try {
-      const response = await apiClient.post('/api/auth/signup', data);
+      const response = await apiClient.post('/api/auth/signup', data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       return {
         success: true,
         data: response.data,

@@ -64,18 +64,23 @@ export default function RegisterPage() {
     setError(null);
     
     try {
-      // Crear objeto con los datos del usuario para el registro
-      const userData = {
-        username: values.username,
-        email: values.email,
-        password: values.password,
-        bio: "", // Campo opcional
-        profile_pic_url: "", // Campo opcional
-        is_private: false // Campo opcional
-      };
-      
-      // Llamar al servicio de autenticación para registrar al usuario
-      const response = await authService.signup(userData);
+      // Crear objeto FormData para enviar datos como form-data
+      const formData = new FormData();
+      formData.append('username', values.username);
+      formData.append('email', values.email);
+      formData.append('password', values.password);
+      // Incluir campos opcionales, incluso si están vacíos o con valores predeterminados
+      formData.append('bio', ""); // O el valor real si tuvieras un campo para bio
+      formData.append('is_private', 'false'); // O el valor real si tuvieras un campo para is_private
+      // Si tuvieras un input de tipo file para la imagen de perfil, lo añadirías aquí:
+      // const profilePicFile = document.getElementById('profile_pic_input').files[0];
+      // if (profilePicFile) {
+      //   formData.append('profile_pic', profilePicFile);
+      // }
+
+      // Llamar al servicio de autenticación para registrar al usuario con FormData
+      // Asegúrate de que authService.signup pueda aceptar FormData
+      const response = await authService.signup(formData as any); // Puede que necesites ajustar el tipo en authService
       
       if (response.success && response.data) {
         console.log('Usuario registrado:', response.data);

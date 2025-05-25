@@ -36,10 +36,13 @@ const getAuthToken = () => {
 const getUserById = async (userId: string) => {
   try {
     const response = await apiClient.get(`/api/users/${userId}`);
+    if (!response.data) {
+      throw new Error('No se encontraron datos de usuario');
+    }
     return response.data;
   } catch (error) {
     console.error(`Error al obtener usuario con ID ${userId}:`, error);
-    return null;
+    throw error; // Re-lanzar el error para manejarlo en el nivel superior
   }
 };
 
@@ -85,30 +88,30 @@ export const postService = {
       }
       
       // Obtener información de usuario para cada post
-      const formattedPosts = await Promise.all(posts.map(async (post: any) => {
-        let userData = null;
-        
-        // Si el post tiene user_id, intentamos obtener la información del usuario
-        if (post.user_id) {
-          userData = await getUserById(post.user_id);
-        }
-        
-        return {
-          ...post,
-          // Usar datos del usuario si están disponibles, o valores predeterminados
-          username: userData?.username || 
-                   typeof post.username === 'string' ? post.username : 
-                   typeof post.user_name === 'string' ? post.user_name : 
-                   typeof post.author === 'string' ? post.author : 'Usuario',
-          user_profile_pic: userData?.profile_pic_url || 
-                           post.user_profile_pic || 
-                           post.profile_pic || 
-                           post.avatar || 
-                           null,
-          // Incluir el objeto de usuario completo para acceder a más información
-          user: userData
-        };
-      }));
+      const formattedPosts = await Promise.all(
+        posts.map(async (post: any) => {
+          try {
+            let userData = null;
+            if (post.user_id) {
+              userData = await getUserById(post.user_id);
+            }
+            return {
+              ...post,
+              username: userData?.username || 'Usuario Desconocido',
+              user_profile_pic: userData?.profile_pic_url || null,
+              user: userData
+            };
+          } catch (error) {
+            console.error(`Error al obtener datos de usuario para post ${post._id}:`, error);
+            return {
+              ...post,
+              username: 'Usuario Desconocido',
+              user_profile_pic: null,
+              user: null
+            };
+          }
+        })
+      );
       
       return {
         success: true,
