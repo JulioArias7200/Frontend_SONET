@@ -60,7 +60,7 @@ export default function FeedPage() {
           {/* Contenido principal - 50% */}
           <div className="flex flex-col bg-indigo-800/15 rounded-xl shadow-xl p-3 border border-indigo-500/30 h-full overflow-hidden">
             {/* Contenido del feed con scroll y manejo de errores */}
-            <main className="flex-1 overflow-y-scroll overflow-x-hidden h-full scrollbar-thin scrollbar-thumb-indigo-500 scrollbar-track-indigo-900/20">
+            <main className="flex-1 overflow-y-scroll h-full" style={{ scrollbarColor: 'gray black' }}>
               <FeedContent />
             </main>
           </div>

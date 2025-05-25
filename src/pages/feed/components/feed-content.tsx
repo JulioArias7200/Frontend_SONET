@@ -184,7 +184,7 @@ export function FeedContent() {
     const intervalId = setInterval(() => {
       console.log("Actualizando feed automáticamente...");
       fetchPosts(false);
-    }, 30000); // 30 segundos
+    }, 500000); // 30 segundos
 
     return () => clearInterval(intervalId);
   }, [isAuthenticated]);
@@ -445,11 +445,8 @@ export function FeedContent() {
 
       {/* Botón de refrescar */}
       <div className="flex justify-between items-center mb-4">
-        <Button onClick={handleRefresh} disabled={refreshing} variant="outline">
-          <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? 'Actualizando...' : 'Actualizar Feed'}
-        </Button>
-        <span className="text-sm text-gray-500">
+
+        <span className="text-sm text-gray-500 ">
           Última actualización: {formatDate(lastRefresh.toISOString())}
         </span>
       </div>
