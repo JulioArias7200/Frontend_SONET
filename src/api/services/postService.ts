@@ -304,11 +304,11 @@ export const postService = {
       const formattedComments = response.data.map((comment: any) => ({
         _id: comment._id || comment.id,
         post_id: comment.post_id,
-        username: comment.username || comment.author?.username || 'Usuario Desconocido',
-        profile_pic_url: comment.profile_pic_url || comment.author?.profile_pic_url || '',
+        username: comment.user?.username || 'Usuario Desconocido',
+        profile_pic_url: comment.user?.profile_pic_url || '',
         text_comment: comment.text_comment || comment.text || '',
         created_at: comment.created_at || '',
-        author: comment.author // Si quieres mantener el objeto completo
+        user: comment.user // Si quieres mantener el objeto completo
       }));
       return {
         success: true,

@@ -66,9 +66,9 @@ const userService = {
   },
 
   // Actualizar usuario
-  updateUser: async (userId: string, userData: Partial<User>): Promise<ApiResponse<User>> => {
+  updateUser: async (userData: Partial<User>): Promise<ApiResponse<User>> => {
     try {
-      const response = await apiClient.put(`/api/users/${userId}`, userData);
+      const response = await apiClient.put('/api/users/profile', userData);
       return {
         success: true,
         data: response.data,
