@@ -3,6 +3,7 @@ import userService from "@/api/services/userService";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { UserSearchBox } from "@/components/UserSearchBox";
 
 interface RecommendedUser {
   _id: string;
@@ -42,6 +43,7 @@ export function RightPanel() {
 
   return (
     <div className="p-4 h-full overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500 scrollbar-track-purple-900/20">
+      <UserSearchBox users={recommendedUsers} />
       <h2 className="text-xl font-bold mb-4 text-white">Usuarios Recomendados</h2>
       
       {loading && (
