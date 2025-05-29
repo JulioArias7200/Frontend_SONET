@@ -20,6 +20,7 @@ export function Sidebar() {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
+    
     await logout();
     navigate('/home');
   };
@@ -53,7 +54,7 @@ export function Sidebar() {
           <NavItem icon={<SettingsIcon className="mr-3 h-5 w-5" />} label="Configuración" to="/settings" />
         </nav>
         
-        <Button className="w-full mt-4">Postear</Button>
+        <Button className="w-full mt-4 dark:text-white dark:bg-black dark:bg-[#1a1a1a] bg-gray-800 hover:bg-gray-700">Postear</Button>
         
         {/* Perfil de usuario en la parte inferior del sidebar */}
         <div className=" bottom-3 border-t pt-4">
@@ -69,7 +70,7 @@ export function Sidebar() {
                 </Avatar>
               </div>
               <div>
-                <p className="font-medium text-sm">{user?.username || "Usuario"}</p>
+                <Link to={`/${user?.username}`} className="font-medium text-sm">{user?.username || "Usuario"}</Link>
                 <p className="text-xs text-muted-foreground truncate max-w-[120px]">
                   {user?.bio || "Sin biografía"}
                 </p>

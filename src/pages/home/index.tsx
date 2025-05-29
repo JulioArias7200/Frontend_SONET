@@ -63,7 +63,7 @@ export default function HomePage() {
     </div>
       {/* Header */}
 
-      <header className={`fixed top-3 left-20 right-20 z-50 bg-background/10 backdrop-blur-sm border-b shadow-sm transition-all duration-300 ease-in-out ${scrolled ? 'py-0.5 px-1' : 'py-2 px-3'}`}>
+      <header className={`fixed top-3 left-20 right-20 z-50 bg-background/10  backdrop-blur-sm border-b shadow-sm transition-all duration-300 ease-in-out ${scrolled ? 'py-0.5 px-1' : 'py-2 px-3'}`}>
         <div className={`container mx-auto flex justify-between items-center transition-all duration-300 ease-in-out ${scrolled ? 'py-1' : 'py-2'}`}>
           <div className="flex items-center gap-2">
            
@@ -73,11 +73,11 @@ export default function HomePage() {
           
           <div className="flex ">
           {!isAuthenticated ? (
-              <div className="flex flex-col sm:flex-row gap-4 ">
-                <Button size="lg" onClick={() => navigate('/login')}>
-                  <LogIn className="mr-2" /> Iniciar Sesión
+              <div className="flex  flex-col sm:flex-row gap-4 ">
+                <Button size="lg" className='dark:text-white dark:bg-[#1a1a1a] bg-white  text-gray-800'variant="outline"  onClick={() => navigate('/login')}>
+                  <LogIn className=" mr-2" /> Iniciar Sesión
                 </Button>
-                <Button size="lg" variant="outline" onClick={() => navigate('/register')}>
+                <Button size="lg" className='dark:text-white dark:bg-[#1a1a1a] bg-white' variant="outline" onClick={() => navigate('/register')}>
                   <UserPlus className="mr-2" /> Registrarse
                 </Button>
               </div>

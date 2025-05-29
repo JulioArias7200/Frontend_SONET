@@ -15,7 +15,7 @@ interface Comment {
 // Interfaz simple para crear posts
 interface CreatePostData {
   content: string;
-  media_urls?: string[];
+  files?: File[];
 }
 
 // Respuesta API simplificada
@@ -154,7 +154,8 @@ export const postService = {
         // Si la respuesta tiene un campo data
         posts = Array.isArray(response.data.data) ? response.data.data : [response.data.data];
       }
-      
+      console.log("----------------------------------------")
+      console.log(posts)
       // Asegurarse de que los posts tengan los campos requeridos
       const formattedPosts = posts.map((post: any) => ({
         _id: post._id || post.id || Math.random().toString(36).substr(2, 9),
@@ -165,7 +166,8 @@ export const postService = {
         likes_count: post.likes_count || post.likesCount || 0,
         comments_count: post.comments_count || post.commentsCount || 0,
         user_profile_pic: post.user_profile_pic || post.author?.profile_pic_url || '',
-        author: post.author // Si quieres mantener el objeto completo
+        author: post.author, // Si quieres mantener el objeto completo
+        media_urls: post.media_urls
       }));
       
       console.log('Posts formateados:', formattedPosts);
@@ -196,10 +198,10 @@ export const postService = {
   },
 
   // Crear una nueva publicación con soporte para imágenes
-  createPost: async (postData: CreatePostData, files?: File[]): Promise<ApiResponse<Post>> => {
+  createPost: async (postData: CreatePostData): Promise<ApiResponse<Post>> => {
     try {
       const token = getToken();
-      
+
       if (!token) {
         console.error('No hay token de autenticación disponible');
         return {
@@ -209,15 +211,13 @@ export const postService = {
         };
       }
       
-      const formData = new FormData();
-      formData.append('content', postData.content);
-
-      if (files && files.length > 0) {
-        files.forEach(file => {
-          formData.append('image', file);
+      const formDataToSend = new FormData();
+      formDataToSend.append('content', postData.content);
+      if(postData.files != undefined){
+        postData.files.forEach(file => {
+          formDataToSend.append('image', file);
         });
       }
-
       // Agregar configuración específica para FormData
       const config = {
         headers: {
@@ -226,7 +226,7 @@ export const postService = {
         }
       };
 
-      const response = await apiClient.post('/api/posts/', formData, config);
+      const response = await apiClient.post('/api/posts/', formDataToSend, config);
       
       return {
         success: true,

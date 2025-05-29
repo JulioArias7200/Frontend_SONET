@@ -1,3 +1,5 @@
+import Cookies from "js-cookie";
+
 // Nombre de la clave para el token
 const TOKEN_KEY = 'auth_token';
 
@@ -10,28 +12,16 @@ export const saveToken = (token: string, expiresInDays = 7) => {
   localStorage.setItem('token_expiry', expirationDate.toISOString());
 };
 
-export const getToken = (): string | null => {
-  const token = localStorage.getItem(TOKEN_KEY);
-  const expiry = localStorage.getItem('token_expiry');
+export const getToken = (): string | undefined => {
   
-  // Verificar si el token ha expirado
-  if (token && expiry) {
-    const expiryDate = new Date(expiry);
-    if (expiryDate > new Date()) {
-      return token;
-    } else {
-      // Si el token ha expirado, eliminarlo
-      removeToken();
-      return null;
-    }
-  }
-  
-  return token;
+  return Cookies.get('auth_token');
 };
 
 export const removeToken = (): void => {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem('token_expiry');
+  Cookies.remove('auth_token')
+  localStorage.removeItem('user_id')
+  localStorage.removeItem('username')
+  localStorage.removeItem('email')
 };
 
 export const hasToken = (): boolean => {

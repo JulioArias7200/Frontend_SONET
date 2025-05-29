@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageSquare, Heart, Share2, RefreshCw, X } from "lucide-react";
+import { MessageSquare, Heart, Share2, RefreshCw, X,ImageIcon as FileIcon } from "lucide-react";
 import postService from "@/api/services/postService";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -16,7 +16,7 @@ import {
   DialogFooter,
   DialogDescription, // Importar DialogDescription
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input"; // Importar Input para la selección de archivos
+import { Link } from "react-router-dom";
 
 interface Post {
   _id: string;
@@ -40,6 +40,19 @@ interface Comment {
   created_at: string;
 }
 
+interface PostFormData {
+  content: string;
+  files: File[];
+  previews: string[];
+}
+interface ApiResponse {
+  success: boolean;
+  message?: string;
+  post?: any;
+  error?: string;
+}
+
+
 export function FeedContent() {
   const { user, isAuthenticated } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
@@ -59,6 +72,44 @@ export function FeedContent() {
   const [newComment, setNewComment] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
   const [likingPost, setLikingPost] = useState<string | null>(null); // ID del post que está recibiendo like
+
+  // manejo de imagenes
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [formData, setFormData] = useState<PostFormData>({
+    content: '',
+    files: [],
+    previews: []
+  });
+
+  const handleContentChange = (e:any) => {
+    setFormData({ ...formData, content: e.target.value });
+  };
+  
+  const handleFileChange = (e:any) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files);
+      const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+      
+      setFormData({
+        ...formData,
+        files: [...formData.files, ...newFiles],
+        previews: [...formData.previews, ...newPreviews]
+      });
+    }
+  };
+  const removeFile = (index: number) => {
+      const updatedFiles = [...formData.files];
+      const updatedPreviews = [...formData.previews];
+      
+      updatedFiles.splice(index, 1);
+      updatedPreviews.splice(index, 1);
+      
+      setFormData({
+        ...formData,
+        files: updatedFiles,
+        previews: updatedPreviews
+      });
+    };
 
   // Función para cargar publicaciones
   const fetchPosts = async (showLoading = true) => {
@@ -203,21 +254,14 @@ export function FeedContent() {
 
   // Crear nueva publicación
   const handleCreatePost = async () => {
-    if (!newPostContent.trim() && selectedFiles.length === 0) return; // Permitir post solo con archivos
-
     try {
       setIsSubmitting(true);
       setError(null); // Limpiar errores anteriores
-
-      console.log("Intentando crear post con contenido:", newPostContent, "y archivos:", selectedFiles.length);
-
+      
       const contentToPost = newPostContent;
       setNewPostContent("");
 
-      const response = await postService.createPost(
-        { content: contentToPost },
-        selectedFiles
-      );
+      const response = await postService.createPost(formData);
 
       console.log("Respuesta del servidor:", response);
 
@@ -244,6 +288,12 @@ export function FeedContent() {
         setTimeout(() => {
           fetchPosts(false);
         }, 1000);
+        setFormData({
+          content: '',
+          files: [],
+          previews: []
+        });
+
 
         console.log("Post creado exitosamente");
       } else {
@@ -417,28 +467,57 @@ export function FeedContent() {
           <CardContent>
             <Textarea
               placeholder="¿Qué estás pensando?"
-              value={newPostContent}
-              onChange={(e) => setNewPostContent(e.target.value)}
+              value={formData.content}
+              onChange={handleContentChange}
               rows={4}
               className="mb-4"
             />
-            {/* Input para seleccionar archivos */}
-            <Input
-              type="file"
-              multiple
-              onChange={handleFileSelect}
-              className="mb-4"
-            />
-            {selectedFiles.length > 0 && (
-              <div className="mb-4 text-sm text-gray-600">
-                Archivos seleccionados: {selectedFiles.map(file => file.name).join(', ')}
+        
+           <div>
+              <div className="flex items-center space-x-4">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className=" text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md flex items-center transition duration-200"
+                >
+                  <FileIcon className="mr-2"/> Subir archivos
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className=" hidden"
+                  multiple
+                  accept="image/*,video/*"
+                />
               </div>
-            )}
+            </div>
+            {formData.previews.length > 0 && (
+                <div className="grid mt-2 grid-cols-3 gap-2">
+                  {formData.previews.map((preview, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={preview}
+                        alt={`Preview ${index}`}
+                        className="w-full h-32 object-cover rounded-md"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeFile(index)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
           </CardContent>
           <CardFooter className="flex justify-end">
             <Button
               onClick={handleCreatePost}
-              disabled={isSubmitting || (!newPostContent.trim() && selectedFiles.length === 0)}
+              className="dark:text-white dark:bg-black dark:bg-[#1a1a1a] bg-gray-800 hover:bg-gray-700"
+              disabled={isSubmitting}
             >
               {isSubmitting ? "Publicando..." : "Publicar"}
             </Button>
@@ -478,7 +557,7 @@ export function FeedContent() {
                     <AvatarFallback>{post.username?.charAt(0) || '?'}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-semibold">{post.username || 'Usuario Desconocido'}</p>
+                    <Link to={`/${post.author.username}`} className="font-semibold">{post.username || 'Usuario Desconocido'}</Link>
                     <p className="text-sm text-gray-500">{formatDate(post.created_at)}</p>
                   </div>
                 </div>

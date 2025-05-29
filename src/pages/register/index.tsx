@@ -198,7 +198,7 @@ export default function RegisterPage() {
                 )}
               />
               
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button type="submit" className="w-full dark:text-white dark:bg-black dark:bg-[#1a1a1a] bg-gray-800 hover:bg-gray-700" disabled={isSubmitting}>
                 {isSubmitting ? "Registrando..." : "Registrarse"}
               </Button>
             </form>
@@ -207,11 +207,11 @@ export default function RegisterPage() {
         <CardFooter className="flex flex-col gap-2">
           <div className="text-sm text-muted-foreground text-center">
             ¿Ya tienes una cuenta?{" "}
-            <Button variant="link" className="p-0" onClick={() => navigate("/login")}>
+            <Button variant="link" className="p-0 dark:text-white dark:bg-black dark:bg-[#1a1a1a] bg-gray-800 text-white " onClick={() => navigate("/login")}>
               Inicia sesión
             </Button>
           </div>
-          <Button variant="link" className="w-full" onClick={() => navigate("/")}>
+          <Button variant="link" className="w-full dark:text-white dark:bg-black dark:bg-[#1a1a1a] bg-gray-800 text-white" onClick={() => navigate("/")}>
             Continuar como invitado
           </Button>
         </CardFooter>

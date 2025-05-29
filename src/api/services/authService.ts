@@ -1,31 +1,21 @@
 import apiClient from '../apiClient';
-import { ApiResponse } from '@/types/api';
-import { User } from '@/types/models';
+import Cookies from "js-cookie"
 
 interface LoginData {
   username_or_email: string;
   password: string;
 }
 
-interface SignupData {
-  username: string;
-  email: string;
-  password: string;
-  bio?: string;
-  profile_pic_url?: string;
-  is_private?: boolean;
-}
-
-interface AuthResponse {
-  token: string;
-  user: User;
-}
-
 const authService = {
   // Iniciar sesión
-  login: async (data: LoginData): Promise<ApiResponse<AuthResponse>> => {
+  login: async (data: LoginData): Promise<any> => {
     try {
       const response = await apiClient.post('/api/auth/login', data);
+      const user = await response.data.user
+      Cookies.set('auth_token',response.data.token);
+      localStorage.setItem('user_id',user.id);
+      localStorage.setItem('username',user.username);
+      localStorage.setItem('email',user.email);
       return {
         success: true,
         data: response.data,
@@ -42,13 +32,18 @@ const authService = {
   },
 
   // Registrar usuario
-  signup: async (data: FormData): Promise<ApiResponse<AuthResponse>> => {
+  signup: async (data: FormData): Promise<any> => {
     try {
       const response = await apiClient.post('/api/auth/signup', data, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+      const user = await response.data.user;
+      Cookies.set('auth_token',response.data.token);
+      localStorage.setItem('user_id',user.id);
+      localStorage.setItem('username',user.username);
+      localStorage.setItem('email',user.email);
       return {
         success: true,
         data: response.data,
@@ -65,22 +60,9 @@ const authService = {
   },
 
   // Verificar token
-  verifyToken: async (): Promise<ApiResponse<User>> => {
-    try {
-      const response = await apiClient.get('/api/auth/verify');
-      return {
-        success: true,
-        data: response.data.user,
-        message: 'Token verificado'
-      };
-    } catch (error: any) {
-      console.error('Error al verificar token:', error);
-      return {
-        success: false,
-        error: error.response?.data?.message || 'Error al verificar token',
-        message: 'Error al verificar token'
-      };
-    }
+  verifyToken: async () => {
+      const token:string|undefined = await Cookies.get("auth_token");
+      return token != undefined;
   }
 };
 

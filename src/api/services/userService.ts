@@ -1,15 +1,26 @@
 import apiClient from '../apiClient';
-import { ApiResponse } from '@/types/api';
-import { User } from '@/types/models';
-
+import Cookies from 'js-cookie';
+interface User{
+  user_id:string|null;
+  username:string|null;
+  email:string|null;
+} 
 // Definir getCurrentUser como función independiente
-export const getCurrentUser = async (): Promise<ApiResponse<User>> => {
+export const getCurrentUser = async () => {
   try {
     // Modificar esta línea para usar la ruta correcta del backend
-    const response = await apiClient.get('/api/auth/profile');
+    const token:string|undefined = await Cookies.get('auth_token');
+    console.info("noooooooooooooooooooooooooo")
+
+    const user:User|null = {
+      user_id:localStorage.getItem('user_id'),
+      username:localStorage.getItem('username'),
+      email:localStorage.getItem('email')
+    }
+    
     return {
       success: true,
-      data: response.data,
+      data: user,
       message: 'Perfil obtenido correctamente'
     };
   } catch (error: any) {
@@ -27,9 +38,10 @@ const userService = {
   getCurrentUser,
   
   // Obtener usuario por ID
-  getUserById: async (userId: string): Promise<ApiResponse<User>> => {
+  getUserByUsername: async (username:any) => {
     try {
-      const response = await apiClient.get(`/api/users/${userId}`);
+
+      const response = await apiClient.get(`/api/users/${username}`);
       return {
         success: true,
         data: response.data,
@@ -47,7 +59,7 @@ const userService = {
 
   // Obtener todos los usuarios
   // Esta función podría no tener un endpoint correspondiente en el backend
-  getAllUsers: async (): Promise<ApiResponse<User[]>> => {
+  getAllUsers: async (): Promise<any> => {
     try {
       const response = await apiClient.get('/api/users');
       return {
@@ -66,7 +78,7 @@ const userService = {
   },
 
   // Actualizar usuario
-  updateUser: async (userData: Partial<User>): Promise<ApiResponse<User>> => {
+  updateUser: async (userData: Partial<any>): Promise<any> => {
     try {
       const response = await apiClient.put('/api/users/profile', userData);
       return {
@@ -85,7 +97,7 @@ const userService = {
   },
 
   // Buscar usuarios
-  searchUsers: async (query: string): Promise<ApiResponse<User[]>> => {
+  searchUsers: async (query: string): Promise<any> => {
     try {
       const response = await apiClient.get(`/api/users/search?q=${query}`);
       return {

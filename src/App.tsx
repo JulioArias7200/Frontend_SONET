@@ -44,9 +44,8 @@ function App() {
             } />
             
             {/* Rutas privadas - solo para usuarios autenticados */}
-            <Route path="/profile" element={<UserProfile />} />
-            <Route path="/profile/:userId" element={<ProfilePage />} />
-            <Route path="/feed" element={<FeedPage />} />
+            <Route path="/:username" element={<ProfilePage/>} />
+            <Route path="/feed"  element={<FeedPage />} />
             
             {/* Ruta de fallback para rutas no encontradas */}
             <Route path="*" element={<Navigate to="/home" replace />} />

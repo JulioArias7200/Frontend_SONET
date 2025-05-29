@@ -1,22 +1,21 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { User } from '@/types/models';
 import { saveToken, getToken, removeToken, hasToken } from '@/utils/tokenStorage';
 import userService from '@/api/services/userService';
 import authService from '@/api/services/authService';
 
 interface AuthContextType {
-  user: User | null;
+  user: any;
   loading: boolean;
-  login: (token: string, userData: User) => void;
+  login: (token: string, userData: any) => void;
   logout: () => void;
-  updateUser: (userData: User) => void;
+  updateUser: (userData: any) => void;
   isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -25,7 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const initAuth = async () => {
       try {
         // Verificar si hay un token almacenado
-        if (hasToken()) {
+        if (await authService.verifyToken()) {
           console.log('Token encontrado, intentando recuperar sesión...');
           
           // Obtener información del usuario usando el token almacenado
@@ -58,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Función para iniciar sesión
-  const login = (token: string, userData: User) => {
+  const login = (token: string, userData: any) => {
     console.log('Guardando token y datos de usuario...');
     saveToken(token);
     setUser(userData);
@@ -74,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Función para actualizar datos del usuario
-  const updateUser = (userData: User) => {
+  const updateUser = (userData: any) => {
     setUser(userData);
   };
 

@@ -118,14 +118,14 @@ export default function LoginPage() {
                 <div className="text-red-500 text-sm">{error}</div>
               )}
               
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full dark:text-white dark:bg-black dark:bg-[#1a1a1a] bg-gray-800 hover:bg-gray-700" disabled={isLoading}>
                 {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardFooter className="flex justify-center">
-          <Button variant="link" onClick={() => navigate('/register')}>
+          <Button variant="link" className='text-black dark:text-white' onClick={() => navigate('/register')}>
             ¿No tienes cuenta? Regístrate
           </Button>
         </CardFooter>
