@@ -18,7 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 export function Sidebar() {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-
+  console.log(user)
   const handleLogout = async () => {
     
     await logout();

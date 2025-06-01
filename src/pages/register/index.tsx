@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import authService from "../../api/services/authService";
-import { useAuth } from "@/context/AuthContext"; // Importar useAuth
-
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -20,9 +19,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Upload, User } from "lucide-react";
 
-// Esquema de validación para el formulario
+// Esquema de validación extendido para incluir la imagen de perfil
 const formSchema = z.object({
   username: z.string().min(3, {
     message: "El nombre de usuario debe tener al menos 3 caracteres.",
@@ -36,6 +35,7 @@ const formSchema = z.object({
   confirmPassword: z.string().min(6, {
     message: "La confirmación de contraseña debe tener al menos 6 caracteres.",
   }),
+  profilePic: z.instanceof(File).optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden",
   path: ["confirmPassword"],
@@ -43,11 +43,12 @@ const formSchema = z.object({
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { login } = useAuth(); // Obtener la función login del contexto
+  const { login } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Definir el formulario con react-hook-form
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -55,42 +56,54 @@ export default function RegisterPage() {
       email: "",
       password: "",
       confirmPassword: "",
+      profilePic: undefined,
     },
   });
 
-  // Función que se ejecuta al enviar el formulario
+  // Manejar cambio de imagen
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      form.setValue("profilePic", file);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPreviewImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Manejar clic en el área de subida
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     setError(null);
     
     try {
-      // Crear objeto FormData para enviar datos como form-data
       const formData = new FormData();
       formData.append('username', values.username);
       formData.append('email', values.email);
       formData.append('password', values.password);
-      // Incluir campos opcionales, incluso si están vacíos o con valores predeterminados
-      formData.append('bio', ""); // O el valor real si tuvieras un campo para bio
-      formData.append('is_private', 'false'); // O el valor real si tuvieras un campo para is_private
-      // Si tuvieras un input de tipo file para la imagen de perfil, lo añadirías aquí:
-      // const profilePicFile = document.getElementById('profile_pic_input').files[0];
-      // if (profilePicFile) {
-      //   formData.append('profile_pic', profilePicFile);
-      // }
+      formData.append('bio', "");
+      formData.append('is_private', 'false');
+      
+      // Agregar la imagen de perfil si existe
+      if (values.profilePic) {
+        formData.append('profile_pic_url', values.profilePic);
+      }
 
-      // Llamar al servicio de autenticación para registrar al usuario con FormData
-      // Asegúrate de que authService.signup pueda aceptar FormData
-      const response = await authService.signup(formData as any); // Puede que necesites ajustar el tipo en authService
+      const response = await authService.signup(formData as any);
       
       if (response.success && response.data) {
         console.log('Usuario registrado:', response.data);
         
-        // Opcionalmente, iniciar sesión automáticamente
         if (response.data.token && response.data.user) {
           login(response.data.token, response.data.user);
           navigate("/feed");
         } else {
-          // Redirigir al login después del registro exitoso
           navigate("/login");
         }
       } else {
@@ -99,7 +112,6 @@ export default function RegisterPage() {
     } catch (err: any) {
       console.error('Error al registrar:', err);
       
-      // Manejar específicamente el error 409 (conflicto)
       if (err.response?.status === 409) {
         setError("El nombre de usuario o correo electrónico ya está en uso. Por favor, intenta con otro.");
       } else {
@@ -133,6 +145,42 @@ export default function RegisterPage() {
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {/* Sección de imagen de perfil */}
+              <div className="flex flex-col items-center space-y-2">
+                <div 
+                  className="relative w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center cursor-pointer overflow-hidden"
+                  onClick={handleUploadClick}
+                >
+                  {previewImage ? (
+                    <img 
+                      src={previewImage} 
+                      alt="Preview" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-12 h-12 text-gray-400" />
+                  )}
+                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                    <Upload className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground text-center">
+                  Haz clic para subir una foto de perfil
+                </p>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+                {form.formState.errors.profilePic && (
+                  <p className="text-sm font-medium text-destructive">
+                    {form.formState.errors.profilePic.message}
+                  </p>
+                )}
+              </div>
+
               <FormField
                 control={form.control}
                 name="username"

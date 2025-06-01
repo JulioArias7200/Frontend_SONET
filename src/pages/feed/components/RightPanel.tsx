@@ -3,6 +3,7 @@ import userService from "@/api/services/userService";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useAuth } from "@/context/AuthContext";
 
 interface RecommendedUser {
   _id: string;
@@ -15,6 +16,7 @@ interface RecommendedUser {
 export function RightPanel() {
   const [recommendedUsers, setRecommendedUsers] = useState<RecommendedUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const {user} = useAuth();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {

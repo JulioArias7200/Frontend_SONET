@@ -22,6 +22,8 @@ export const removeToken = (): void => {
   localStorage.removeItem('user_id')
   localStorage.removeItem('username')
   localStorage.removeItem('email')
+  localStorage.removeItem('profile_pic_url');
+      
 };
 
 export const hasToken = (): boolean => {

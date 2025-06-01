@@ -16,6 +16,8 @@ const authService = {
       localStorage.setItem('user_id',user.id);
       localStorage.setItem('username',user.username);
       localStorage.setItem('email',user.email);
+      localStorage.setItem('profile_pic_url',user.profile_pic_url);
+
       return {
         success: true,
         data: response.data,
@@ -44,6 +46,8 @@ const authService = {
       localStorage.setItem('user_id',user.id);
       localStorage.setItem('username',user.username);
       localStorage.setItem('email',user.email);
+      localStorage.setItem('profile_pic_url',user.profile_pic_url);
+      
       return {
         success: true,
         data: response.data,

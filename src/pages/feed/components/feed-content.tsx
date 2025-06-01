@@ -269,9 +269,10 @@ export function FeedContent() {
         setSelectedFiles([]);
 
         if (response.data) {
+          console.log(user)
           const newPost: Post = {
             _id: response.data._id || Date.now().toString(),
-            user_id: user?._id || 'temp-user-id',
+            user_id: user?.user_id || 'temp-user-id',
             username: user?.username || 'Usuario',
             content: contentToPost,
             media_urls: response.data.media_urls, // Incluir URLs de medios de la respuesta
@@ -457,7 +458,7 @@ export function FeedContent() {
   };
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 ">
       {/* Sección para crear nueva publicación */}
       {isAuthenticated && (
         <Card className="mb-6">
@@ -557,7 +558,7 @@ export function FeedContent() {
                     <AvatarFallback>{post.username?.charAt(0) || '?'}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <Link to={`/${post.author.username}`} className="font-semibold">{post.username || 'Usuario Desconocido'}</Link>
+                    <Link to={`/${post.username}`} className="font-semibold">{post.username || 'Usuario Desconocido'}</Link>
                     <p className="text-sm text-gray-500">{formatDate(post.created_at)}</p>
                   </div>
                 </div>
