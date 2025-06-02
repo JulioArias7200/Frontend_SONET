@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { UserSearchBox } from "@/components/UserSearchBox";
 import { useAuth } from "@/context/AuthContext";
 
+
 interface RecommendedUser {
   _id: string;
   username: string;
