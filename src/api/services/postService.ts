@@ -460,7 +460,38 @@ export const postService = {
         message: 'Error disliking post'
       };
     }
+  },
+  deletePost: async (postId: string): Promise<ApiResponse<null>> => {
+    try {
+      const token = getToken();
+      if (!token) {
+        return {
+          success: false,
+          error: 'No hay token de autenticación disponible',
+          message: 'Error: No autenticado'
+        };
+      }
+      await apiClient.delete(`/api/posts/${postId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      return {
+        success: true,
+        data: null,
+        message: 'Publicación eliminada correctamente'
+      };
+    } catch (error: any) {
+      console.error('Error al eliminar publicación:', error);
+      return {
+        success: false,
+        error: error.message || 'Error al eliminar publicación',
+        message: 'Error al eliminar publicación'
+      };
+    }
+
   }
+
 };
 
 export default postService;

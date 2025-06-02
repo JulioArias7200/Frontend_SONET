@@ -17,6 +17,7 @@ import {
   DialogDescription, // Importar DialogDescription
 } from "@/components/ui/dialog";
 import { Link } from "react-router-dom";
+import { Trash2, Edit } from "lucide-react"; // Importar iconos para editar y eliminar
 
 interface Post {
   _id: string;
@@ -72,6 +73,37 @@ export function FeedContent() {
   const [newComment, setNewComment] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
   const [likingPost, setLikingPost] = useState<string | null>(null); // ID del post que está recibiendo like
+
+  // Estados para el modal de confirmación de eliminación
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<string | null>(null);
+
+  // Función para manejar la eliminación de una publicación
+  const handleDeletePost = async () => {
+    if (!postToDelete) return;
+
+    try {
+      const response = await postService.deletePost(postToDelete);
+      if (response.success) {
+        setPosts(prevPosts => prevPosts.filter(post => post._id !== postToDelete));
+        setShowDeleteConfirm(false);
+        setPostToDelete(null);
+        console.log("Publicación eliminada exitosamente.");
+      } else {
+        console.error("Error al eliminar publicación:", response.error);
+        setError(response.error || "No se pudo eliminar la publicación.");
+      }
+    } catch (err: any) {
+      console.error("Error detallado al eliminar publicación:", err);
+      setError(err.message || "Error al eliminar la publicación.");
+    }
+  };
+
+  // Función para abrir el modal de confirmación de eliminación
+  const openDeleteConfirm = (postId: string) => {
+    setPostToDelete(postId);
+    setShowDeleteConfirm(true);
+  };
 
   // manejo de imagenes
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -595,6 +627,18 @@ export function FeedContent() {
                   </Button>
 
                 </div>
+                {isAuthenticated && user && user.user_id === post.user_id && (
+                  <div className="flex space-x-2">
+                    {/* Botón de Editar (placeholder) */}
+                    <Button variant="ghost" size="sm" onClick={() => console.log('Editar post', post._id)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    {/* Botón de Eliminar */}
+                    <Button variant="ghost" size="sm" onClick={() => openDeleteConfirm(post._id)}>
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                )}
               </CardFooter>
             </Card>
           ))}
@@ -695,6 +739,26 @@ export function FeedContent() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setCommentsModalOpen(false)}>
               Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Confirmación de Eliminación */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Eliminación</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que quieres eliminar esta publicación? Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDeletePost}>
+              Eliminar
             </Button>
           </DialogFooter>
         </DialogContent>
