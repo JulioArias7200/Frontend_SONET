@@ -77,6 +77,10 @@ export function FeedContent() {
   // Estados para el modal de confirmación de eliminación
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
+  // Estados para el modal de edición
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [postToEdit, setPostToEdit] = useState<Post | null>(null);
+  const [editedContent, setEditedContent] = useState('');
 
   // Función para manejar la eliminación de una publicación
   const handleDeletePost = async () => {
@@ -103,6 +107,38 @@ export function FeedContent() {
   const openDeleteConfirm = (postId: string) => {
     setPostToDelete(postId);
     setShowDeleteConfirm(true);
+  };
+
+  // Función para abrir el modal de edición
+  const openEditModal = (post: Post) => {
+    setPostToEdit(post);
+    setEditedContent(post.content);
+    setShowEditModal(true);
+  };
+
+  // Función para manejar la edición de una publicación
+  const closeEditModal = () => {
+    setPostToEdit(null);
+    setEditedContent('');
+    setShowEditModal(false);
+  };
+  const handleEditPost = async () => {
+    if (!postToEdit) return;
+
+    try {
+      const response = await postService.editPost(postToEdit._id, editedContent);
+      if (response.success) {
+
+        setPosts(posts.map(post =>
+          post._id === postToEdit._id ? { ...post, content: editedContent } : post
+        ));
+        closeEditModal();
+      } else {
+        console.error('Error editing post:', response.message);
+      }
+    } catch (error) {
+      console.error('Error editing post:', error);
+    }
   };
 
   // manejo de imagenes
@@ -628,14 +664,22 @@ export function FeedContent() {
 
                 </div>
                 {isAuthenticated && user && user.user_id === post.user_id && (
-                  <div className="flex space-x-2">
-                    {/* Botón de Editar (placeholder) */}
-                    <Button variant="ghost" size="sm" onClick={() => console.log('Editar post', post._id)}>
-                      <Edit className="h-4 w-4" />
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openEditModal(post)}
+                      className="text-blue-500 hover:text-blue-700"
+                    >
+                      <Edit className="h-5 w-5" />
                     </Button>
-                    {/* Botón de Eliminar */}
-                    <Button variant="ghost" size="sm" onClick={() => openDeleteConfirm(post._id)}>
-                      <Trash2 className="h-4 w-4 text-red-500" />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openDeleteConfirm(post)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-5 w-5" />
                     </Button>
                   </div>
                 )}
@@ -745,6 +789,50 @@ export function FeedContent() {
       </Dialog>
 
       {/* Modal de Confirmación de Eliminación */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Eliminación</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que quieres eliminar esta publicación? Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDeletePost}>
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Post Modal */}
+      <Dialog open={showEditModal} onOpenChange={setShowEditModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Post</DialogTitle>
+            <DialogDescription>
+              Edit the content of your post.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Textarea
+              value={editedContent}
+              onChange={(e) => setEditedContent(e.target.value)}
+              placeholder="Edit your post content..."
+              rows={6}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeEditModal}>Cancel</Button>
+            <Button onClick={handleEditPost}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent>
           <DialogHeader>

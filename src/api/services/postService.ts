@@ -461,6 +461,133 @@ export const postService = {
       };
     }
   },
+  deletePost: async (postId: string): Promise<ApiResponse<any>> => {
+    try {
+      const response = await apiClient.delete(`/api/posts/${postId}`);
+      return { success: true, data: response.data, message: 'Publicación eliminada correctamente' };
+    } catch (error: any) {
+      console.error('Error al eliminar publicación:', error);
+      return { success: false, error: error.message || 'Error al eliminar publicación' };
+    }
+  },
+
+  // Editar una publicación
+  editPost: async (postId: string, content: string): Promise<ApiResponse<any>> => {
+    try {
+      const response = await apiClient.put(`/api/posts/${postId}`, { content });
+      return { success: true, data: response.data, message: 'Publicación editada correctamente' };
+    } catch (error: any) {
+      console.error('Error al editar publicación:', error);
+      return { success: false, error: error.message || 'Error al editar publicación' };
+    }
+  },
+
+  // Comprobar si el usuario ha dado like a una publicación
+  checkLikeStatus: async (postId: string): Promise<ApiResponse<{ isLiked: boolean }>> => {
+    try {
+      const token = getToken();
+      if (!token) {
+        return {
+          success: false,
+          error: 'No hay token de autenticación disponible',
+          message: 'Error: No autenticado'
+        };
+      }
+      const response = await apiClient.get(`/api/posts/${postId}/likeStatus`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      return {
+        success: true,
+        data: response.data,
+        message: 'Estado del like obtenido correctamente'
+      };
+    } catch (error: any) {
+      console.error('Error al verificar like:', error);
+      return {
+        success: false,
+        error: error.message || 'Error al verificar like',
+        message: 'Error al verificar like'
+      };
+    }
+  },
+
+  likePost: async (postId: string): Promise<ApiResponse<Post>> => {
+    try {
+      const token = getToken();
+      if (!token) {
+        return {
+          success: false,
+          error: 'No hay token de autenticación disponible',
+          message: 'Error: No autenticado'
+        };
+      }
+      const response = await apiClient.post(`/api/posts/${postId}/like`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      console.log('Respuesta del servidor (like):', response.data);
+      
+      // Aceptar la respuesta si tiene datos, sin validación estricta
+      if (response.data) {
+        return {
+          success: true,
+          data: response.data,
+          message: 'Post liked successfully'
+        };
+      }
+      
+      throw new Error('No se recibieron datos del servidor');
+    } catch (error: any) {
+      console.error('Error liking post:', error);
+      return {
+        success: false,
+        error: error.message || 'Error liking post',
+        message: 'Error liking post'
+      };
+    }
+  },
+
+  dislikePost: async (postId: string): Promise<ApiResponse<Post>> => {
+    try {
+      const token = getToken();
+      if (!token) {
+        return {
+          success: false,
+          error: 'No hay token de autenticación disponible',
+          message: 'Error: No autenticado'
+        };
+      }
+      const response = await apiClient.post(`/api/posts/${postId}/dislike`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      console.log('Respuesta del servidor (dislike):', response.data);
+      
+      // Aceptar la respuesta si tiene datos, sin validación estricta
+      if (response.data) {
+        return {
+          success: true,
+          data: response.data,
+          message: 'Post disliked successfully'
+        };
+      }
+      
+      throw new Error('No se recibieron datos del servidor');
+    } catch (error: any) {
+      console.error('Error disliking post:', error);
+      return {
+        success: false,
+        error: error.message || 'Error disliking post',
+        message: 'Error disliking post'
+      };
+    }
+  },
   deletePost: async (postId: string): Promise<ApiResponse<null>> => {
     try {
       const token = getToken();
